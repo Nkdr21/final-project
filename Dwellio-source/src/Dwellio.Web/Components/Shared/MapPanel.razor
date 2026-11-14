@@ -1,9 +1,0 @@
-@using System.Globalization
-<div class="map-panel"><iframe title="Demo location on the Astana map" src="@MapUrl" loading="lazy"></iframe><p>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · complex locations are illustrative. <a href="@ExternalUrl" target="_blank" rel="noopener">Open map ↗</a></p></div>
-@code {
-    [Parameter] public double Latitude { get; set; } = 51.125;
-    [Parameter] public double Longitude { get; set; } = 71.43;
-    private string F(double x) => x.ToString("F5", CultureInfo.InvariantCulture);
-    private string MapUrl => $"https://www.openstreetmap.org/export/embed.html?bbox={F(Longitude-.022)}%2C{F(Latitude-.012)}%2C{F(Longitude+.022)}%2C{F(Latitude+.012)}&layer=mapnik&marker={F(Latitude)}%2C{F(Longitude)}";
-    private string ExternalUrl => $"https://www.openstreetmap.org/?mlat={F(Latitude)}&mlon={F(Longitude)}#map=15/{F(Latitude)}/{F(Longitude)}";
-}

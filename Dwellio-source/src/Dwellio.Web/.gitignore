@@ -1,4 +1,0 @@
-App_Data/
-Data/*.db*
-wwwroot/uploads/
-appsettings.Local.json
