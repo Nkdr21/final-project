@@ -39,3 +39,12 @@ The HTTP smoke script verifies server rendering and redirect protection; it cann
 - HTTP smoke: 10 public routes and 3 anonymous redirects passed against the updated application on port 5182.
 - Added skip-to-content link, visible keyboard focus and reduced-motion CSS; these changes do not establish full accessibility compliance.
 - No repeatable browser E2E suite has been added. Account flows, multiple browsers, load tests and deployment remain to be verified.
+
+## Sourced rental references — 2026-11-15
+
+- Added `/market` with six sourced Astana rental examples, name/address and rent filters, sorting, source links and explicit snapshot limitations.
+- Build: zero warnings/errors; existing 41 unit/integration tests passed. These tests do not validate external listing availability or market-page interactions.
+- HTTP smoke: 11 public routes including `/market` and 3 anonymous redirects passed on port 5183.
+- Browser access was unavailable for this update; market filter interactions and new layout are not visually verified. Existing screenshots show the preceding interface version; the home headline and navigation have since changed.
+
+- Mangilik El extension: three examples added (Expo New Life-2, Promenade Expo, Dream City), avenue filter and archived-price label. Build and 41 tests passed; interactive avenue-filter check not performed.
