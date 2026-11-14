@@ -1,51 +1,51 @@
 # Dwellio
 
-A student housing web application for Astana. Find a home by rent, everyday amenities and the journey to campus and back. Built with C#/.NET 10, Blazor Interactive Server, EF Core, SQLite and ASP.NET Core Identity.
+Dwellio — учебное веб-приложение для подбора студенческого жилья в Астане с учётом бюджета, удобств и поездок на учёбу и обратно. Написано на C#/.NET 10 и Blazor Web App; данные хранятся в SQLite через Entity Framework Core. Учебный акцент — чистые функции, records, LINQ, pattern matching и тестирование логики C#.
 
-**Data status:** seeded homes and complexes are fictional; images are original SVG concept illustrations. Transport and walking times are explicit demo scenarios, not real-time forecasts. The OpenStreetMap base map is external. No API key is needed to run.
+## Скриншоты
 
-## Run in VS Code
+Сняты 15.11.2026 в Chrome: desktop — 1440×1000, mobile — 390×844 (эмуляция размера, не физический телефон).
 
-Install .NET SDK 10 and the recommended C# Dev Kit extension. Open this repository folder, then run:
+| Экран | Desktop | Mobile |
+|---|---|---|
+| Главная | ![Главная](docs/screenshots/home-desktop.jpg) | [Mobile](docs/screenshots/home-mobile.jpg) |
+| Подбор жилья | ![Каталог](docs/screenshots/catalog-desktop.jpg) | [Mobile](docs/screenshots/catalog-mobile.jpg) |
+| Карточка квартиры | ![Квартира](docs/screenshots/apartment-desktop.jpg) | [Mobile](docs/screenshots/apartment-mobile.jpg) |
+| Сравнение | ![Сравнение](docs/screenshots/compare-desktop.jpg) | [Mobile](docs/screenshots/compare-mobile.jpg) |
+
+## Возможности
+
+- Указать бюджет, обязательные удобства и ограничения поездок.
+- Найти и отсортировать квартиры по своим предпочтениям.
+- Посмотреть расходы, ЖК и объяснение результата подбора.
+- Сравнить до трёх квартир, включая расходы и транспортные сценарии.
+- Сохранить квартиры в избранное и записать свои предпочтения после входа.
+- Найти ЖК по названию и удобствам, прочитать или оставить отзыв.
+- Опубликовать и редактировать свои объявления с ролью Owner; с ролью Admin — скрывать и восстанавливать объявления и отзывы.
+
+## Запуск
+
+Требуется .NET SDK 10. Для VS Code рекомендуется C# Dev Kit.
+Из корня репозитория:
 
 ```sh
 dotnet restore
 dotnet run --project src/Dwellio.Web --launch-profile http
 ```
 
-Open `http://localhost:5180`. Stop with Ctrl+C. VS Code also has **Terminal → Run Task → Dwellio: run**.
+Откройте [http://localhost:5180](http://localhost:5180). Остановка — `Ctrl+C`.
+В VS Code также доступно **Terminal → Run Task → Dwellio: run**.
+Локальные базы автоматически создаются в `src/Dwellio.Web/App_Data/` и исключены из Git.
 
-SQLite files are created automatically under `src/Dwellio.Web/App_Data/`. They are ignored by Git. Identity uses migrations; the classroom housing schema uses `EnsureCreated`. Future schema changes need a migration plan, not deletion of user data.
+## Тестовые аккаунты
 
-## Accounts
+Обычный аккаунт создаётся через **Sign in → Register as a new user**.
+Флажок **I want to publish listings** выбирает роль Owner; без него создаётся Student.
+Публичная регистрация Admin отсутствует.
+При запуске с заданной переменной окружения `DWELLIO_DEMO_PASSWORD` создаются демонстрационные аккаунты `student@dwellio.test`, `owner@dwellio.test`, `admin@dwellio.test`, если их ещё нет.
+Значение задаётся локально и должно соответствовать требованиям Identity. Пароли в репозитории не хранятся; изменение переменной не сбрасывает существующие пароли.
 
-Register through **Sign in → Register as a new user**. Check **I want to publish listings** for an Owner account. Otherwise the account is a Student. Users cannot self-register as Admin. Owner access only permits editing their own listings. Student preferences and saved homes are private to their account.
-
-For local classroom demonstration, optionally set `DWELLIO_DEMO_PASSWORD` to a password you choose that satisfies Identity rules before the first launch with this setting. It creates `student@dwellio.test`, `owner@dwellio.test`, and `admin@dwellio.test`. Never put this password in source control or shared scripts. The app does not reset existing passwords when the variable changes. No credentials are shipped.
-
-Email delivery is not configured; email confirmation is disabled for this local classroom version. Real deployment needs an email provider, confirmed accounts, HTTPS, protected key storage, upload lifecycle controls and deployment testing.
-
-## Main workflow
-
-1. Open **My lifestyle** and set your budget, must-haves, desired amenities and commute times.
-2. Select **Show my matches**. Use filters and sorting; add up to three homes to comparison.
-3. Open a home to see explanations, costs, outbound/return scenarios and its neighbourhood.
-4. Sign in to save homes and preferences or review a complex.
-5. Owners publish/edit listings in Dashboard; Admin can hide/restore listings and reviews.
-
-Comparison selection is scoped to the current interactive session. Profile preferences and favourites are stored in SQLite. A full reload starts a new comparison session.
-
-## Project structure
-
-```text
-src/Dwellio.Core/       Immutable models and pure functions (no database or UI)
-src/Dwellio.Web/        Blazor UI, Identity, SQLite, services and illustrations
-tests/Dwellio.Tests/    Unit and real SQLite integration tests
-docs/                  Architecture, course mapping, team plan and handoff
-scripts/               Local verification helpers
-```
-
-## Verification
+## Тесты
 
 ```sh
 dotnet build
@@ -53,19 +53,69 @@ dotnet test
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
-With the app running, `python3 scripts/http_smoke.py` checks public HTTP routes and access redirects. This is not a browser end-to-end test. See `docs/testing.md` for the actual verification status and remaining manual tests.
+Проверено 15.11.2026 на macOS: build — 0 ошибок, 0 предупреждений; тесты — 38 прошли, 0 упали, 0 пропущены (до и после реорганизации).
+[GitHub Actions](https://github.com/Nkdr21/final-project/actions/runs/43634904148): задания Windows, Linux и macOS завершились успешно.
+При запущенном приложении `python3 scripts/http_smoke.py` проверяет HTTP-страницы и перенаправления.
+Область тестов и ручные проверки: [docs/testing.md](docs/testing.md).
 
-GitHub Actions is configured for Windows, Linux and macOS; this matrix is not verified until the workflow runs after you push.
+## Структура проекта
 
-## Team and commits
+| Папка или файл | Назначение |
+|---|---|
+| `src/Dwellio.Core/` | Модели C#, расчёты подбора и стоимости, фильтры удобств, транспортные сценарии |
+| `src/Dwellio.Web/` | Страницы Blazor, аккаунты, сервисы, база данных, стили |
+| `tests/Dwellio.Tests/` | Unit-тесты и интеграционные тесты с SQLite |
+| `docs/` | Архитектура, данные, критерии курса, тестирование и план команды |
+| `docs/screenshots/` | Снимки экранов приложения |
+| `scripts/` | HTTP smoke-проверка |
+| `.github/workflows/` | Автоматическая сборка и тесты |
+| `.vscode/` | Задачи запуска и рекомендации расширений |
+| `Dwellio.slnx`, `global.json` | Состав решения и выбор SDK |
 
-See `docs/team-plan.md` and `docs/friend-branch-ru.md`. The baseline was prepared with AI assistance; commits should describe actual review and changes, not invented authorship. The repository owner requested to perform the next commit personally. The only existing remote commit at handoff is the initial `.gitignore` commit unless the owner has pushed independently.
+## Архитектура и C#
 
-## Important documents
+`Core` содержит вычисления без доступа к базе; `Web` связывает интерфейс, авторизацию и хранение данных. Тесты проверяют вычисления и операции сервиса.
 
-- `docs/grading-checklist.md`: honest evidence for all 20 criteria
-- `docs/lecture-mapping.md`: functional C# concepts and their implementation
-- `docs/HANDOFF.md`: instructions for continuing in another chat
-- `docs/data-sources.md`: data provenance and limitations
+```mermaid
+flowchart LR
+    UI[Blazor Web] --> Core[C# Core: records, LINQ, pure functions]
+    UI --> Service[HousingService]
+    Service --> DB[(SQLite / EF Core)]
+    Tests[xUnit] --> Core
+    Tests --> Service
+```
 
-This is a working classroom application, not a verified rental marketplace or a guarantee of a particular grade.
+Подробности: [архитектура](docs/architecture.md), [C# и материалы лекций](docs/grading-checklist.md#functional-c-lecture-mapping).
+
+## Данные
+
+Исходные 8 ЖК и 32 квартиры, цены, координаты, удобства, время поездок и загруженность автобусов — демонстрационные данные. SVG-изображения — иллюстрации, не фотографии объектов.
+OpenStreetMap используется для внешней карты. Данные и изображения, добавленные пользователями, приложением не проверяются.
+Подробнее: [источники и ограничения данных](docs/data-sources.md).
+
+## Ограничения
+
+- Email-подтверждение отключено; отправка писем не настроена.
+- Рабочий deployment серверного приложения не проверен; успешная публикация GitHub Pages не подтверждает работу Blazor Server и SQLite.
+- Автоматических browser end-to-end тестов нет; HTTP smoke их не заменяет.
+- Список сравнения сбрасывается при полном обновлении страницы.
+- Нет реальных транспортных прогнозов, проверки цен и подтверждения проживания авторов отзывов.
+- Каталог загружает не более 500 записей; расчёт и пагинация выполняются в памяти. Нагрузочные показатели не проверены.
+- Для housing-базы используется `EnsureCreated`; дальнейшее изменение схемы требует плана миграций.
+- Загрузка изображений ограничена 5 MB и базовой проверкой формата; квоты и очистка неиспользуемых файлов не реализованы.
+- Полная проверка доступности, нескольких браузеров и реальных мобильных устройств не завершена.
+
+## Участники
+
+`Nkdr21` и `Surrare`. Области ответственности описаны в [плане команды](docs/team-plan.md); фактические изменения участников проверяются по истории Git и Pull Request.
+
+## Документация
+
+- [Архитектура и назначение папок](docs/architecture.md)
+- [Модель данных](docs/data-model.md)
+- [Источники данных](docs/data-sources.md)
+- [Правила подбора](docs/recommendations.md)
+- [Критерии курса и материалы C#](docs/grading-checklist.md)
+- [Проверки и тесты](docs/testing.md)
+- [План команды](docs/team-plan.md)
+- [План защиты](docs/defense.md)

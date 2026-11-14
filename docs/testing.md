@@ -1,12 +1,12 @@
 # Verification status
 
-Local platform: Apple Silicon macOS, .NET SDK 10.0.401. Verification performed 2026-11-14.
+Local platform: Apple Silicon macOS, .NET SDK 10.0.401. Verification updated 2026-11-15.
 
-- Build completed with zero warnings/errors before final formatting.
+- Before and after repository cleanup: `dotnet build` passed with zero warnings/errors; `dotnet test --no-build` passed 38/38, with zero failures and skips.
 - 38 unit/integration tests passed after neighbourhood implementation. Uses xUnit and actual in-memory SQLite.
 - HTTP smoke script passed 10 public pages and 3 anonymous access redirects.
-- Browser automation was unavailable in this chat. Interactive end-to-end tests, visual QA, keyboard interaction and responsive rendering have **not** been claimed as passed.
-- GitHub Actions matrix is configured, not executed here (code has not been pushed).
+- Chrome browser check on 2026-11-15: home → catalog → select two apartments → comparison → apartment detail. Comparison displayed both selected apartments. Captured four pages at 1440×1000 and 390×844 in `screenshots/`. This is a limited browser check, not a repeatable E2E suite or physical-device certification. Keyboard, account and full cross-browser flows remain unverified.
+- [GitHub Actions run 43634904148](https://github.com/Nkdr21/final-project/actions/runs/43634904148) succeeded on Windows, Linux and macOS before this cleanup. The current uncommitted changes have not run on CI yet.
 - Coverage collection is supported; no high-coverage percentage is claimed for template Identity/UI code.
 
 ## Manual acceptance checklist
