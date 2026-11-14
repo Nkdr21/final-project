@@ -1,0 +1,22 @@
+<section>
+    <h2>@Title</h2>
+    @if (!Items.Any())
+    {
+        <p class="muted">No information available for this group.</p>
+    }
+    <div class="nearby-list">
+        @foreach (var amenity in Items)
+        {
+            <div>
+                <strong>@Labels.Category(amenity.Category)</strong>
+                <span>@(amenity.WalkMinutes == 0 ? "Inside the complex" : $"{amenity.WalkMinutes} min walk · demo estimate")</span>
+                <small>@amenity.Access</small>
+                <small>@NeighborhoodService.CostLabel(amenity)</small>
+            </div>
+        }
+    </div>
+</section>
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public IEnumerable<Amenity> Items { get; set; } = [];
+}

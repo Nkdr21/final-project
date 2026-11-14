@@ -1,0 +1,4 @@
+<div class="trip-card"><span class="eyebrow">@Title</span>@if (Trip is null) { <p>No suitable route or data available.</p> } else {
+    <h3>@Trip.Minutes <small>min</small></h3><p>@Trip.Name</p><div class="amenity-tags"><span>@Trip.Transfers transfers</span><span>@Trip.WalkMinutes min walk</span></div><p>@Labels.Load(Trip.Crowding) <small>· demo</small></p><small>@Trip.Boarding → @Trip.Exit</small>
+}</div>
+@code { [Parameter] public string Title { get; set; } = ""; [Parameter] public Trip? Trip { get; set; } }

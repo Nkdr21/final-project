@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Dwellio.Core/Dwellio.Core.csproj" />
+    <Project Path="src/Dwellio.Web/Dwellio.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Dwellio.Tests/Dwellio.Tests.csproj" />
+  </Folder>
+</Solution>
