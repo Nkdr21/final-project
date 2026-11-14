@@ -29,3 +29,13 @@ HousingServiceTests covers account isolation, ownership, forbidden student write
 NeighborhoodTests covers case-insensitive search, conjunctive filters, inclusive distance boundaries and inside/nearby grouping.
 
 The HTTP smoke script verifies server rendering and redirect protection; it cannot verify interactive circuit behaviour or image layout.
+
+## Update: comparison persistence and housing interface — 2026-11-15
+
+- `dotnet build --no-restore` and `dotnet test --no-build`: 41 passed, zero failed/skipped; build zero warnings/errors.
+- Three `ComparisonStorageTests`: restoration into a new circuit and removal, positive/unique/max-three IDs, write failure fallback.
+- Chrome: selected two catalog apartments, opened comparison, fully reloaded page; both remained. Removed one and reloaded; only the other remained.
+- Captured updated home, catalog, comparison and apartment pages at desktop 1440×1000 and mobile 390×844. Mobile is viewport emulation, not a physical-device test.
+- HTTP smoke: 10 public routes and 3 anonymous redirects passed against the updated application on port 5182.
+- Added skip-to-content link, visible keyboard focus and reduced-motion CSS; these changes do not establish full accessibility compliance.
+- No repeatable browser E2E suite has been added. Account flows, multiple browsers, load tests and deployment remain to be verified.

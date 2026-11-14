@@ -7,8 +7,8 @@ The supplied final rubric has 20 criteria at 5% each. This checklist records imp
 | Code structure | Core/Web/Tests separation | Team must explain responsibilities |
 | Component reuse | ApartmentCard, TripCard, MapPanel, AmenityGroup | Review component parameters |
 | Cross-platform | .NET + browser; CI matrix configured | Windows, Linux and macOS jobs passed in [run 43634904148](https://github.com/Nkdr21/final-project/actions/runs/43634904148); device/browser QA remains separate |
-| State management | Scoped SearchState; persisted profiles/favourites | Compare selection resets with new circuit |
-| UI design | Coherent responsive English UI and original illustrations | Visual browser QA outstanding |
+| State management | Scoped SearchState; persisted profiles/favourites | Comparison restored from tab sessionStorage after reload; not synced across devices |
+| UI design | Housing-oriented English UI, compact navigation and original illustrations | Home, catalog, comparison and detail captured in desktop/mobile Chrome; broader QA outstanding |
 | UX | Empty/error states; explanations; reversible actions | Complete hands-on user testing |
 | Responsiveness | CSS breakpoints for desktop/tablet/mobile | Actual device/browser checks outstanding |
 | Core functionality | Catalog, preferences, detail, compare, auth, owner CRUD, reviews | Interactive browser flows need verification |

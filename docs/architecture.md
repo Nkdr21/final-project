@@ -21,7 +21,7 @@ flowchart LR
 - `NeighborhoodService`: reusable pure amenity filtering/grouping.
 - `DemoRouteProvider`: deterministic teaching scenarios behind an interface; replace with a researched real provider later.
 - `HousingService`: authorization, validation and persistence. Never trusts a user ID supplied by a browser form.
-- `SearchState`: per-circuit preferences and comparison IDs. No cross-user singleton state.
+- `SearchState`: per-circuit preferences and comparison IDs. Comparison IDs are restored after interactive rendering from tab-local `sessionStorage` through `comparison.js`; C# validates positive IDs, uniqueness and the three-home limit. No cross-user singleton state.
 - `IDbContextFactory`: short-lived contexts per database operation, rather than a long-lived tracked context per circuit.
 - Identity: framework password hashing, cookies, antiforgery and lockout on login failures.
 

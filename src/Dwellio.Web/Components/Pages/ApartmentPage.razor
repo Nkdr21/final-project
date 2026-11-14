@@ -14,8 +14,15 @@
 @if(match is not null){<hr/><h3>@match.Score / 100 for your priorities</h3>@foreach(var reason in match.Reasons){<p class="reason">✓ @reason</p>}@foreach(var missing in match.Missing){<p class="muted">· @missing</p>}}else{<p>Does not meet your current must-haves or commute limits.</p>}</aside></div>}
 </div>
 @code{
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Search.LoadComparisonAsync();
+        StateHasChanged();
+    }
+
  [Parameter]public int Id{get;set;} ListingEntity? listing; ComplexEntity? complex; MonthlyCost? cost; Match? match;Trip? outbound,back;bool loading=true,favorite;string message="",routeMessage="";
  protected override async Task OnParametersSetAsync(){loading=true;if(!Search.Loaded)Search.Update(await Housing.LoadPreferences()??new());listing=await Housing.Listing(Id);complex=(await Housing.Complexes()).FirstOrDefault(x=>x.Id==listing?.ComplexId);if(listing is not null&&complex is not null){cost=RecommendationEngine.CalculateCost(listing.ToModel(),complex.ToModel(),Search.Preferences);var route=await Routes.GetAsync(complex.ToModel(),Search.Preferences);match=RecommendationEngine.Evaluate(listing.ToModel(),complex.ToModel(),Search.Preferences,route);if(route is RoutesFound found){outbound=RecommendationEngine.ChooseTrip(found.Value.Outbound,Search.Preferences);back=RecommendationEngine.ChooseTrip(found.Value.Return,Search.Preferences);}else routeMessage=route switch{RoutesMissing r=>r.Message,RoutesUnavailable r=>r.Message,_=>"No data"};favorite=(await Housing.Favorites()).Contains(Id);}loading=false;}
  async Task Favorite(){message=(await Housing.ToggleFavorite(Id)).Message;favorite=(await Housing.Favorites()).Contains(Id);}
- void Compare()=>message=Search.ToggleCompare(Id).Message;
+ async Task Compare()=>message=(await Search.ToggleCompareAsync(Id)).Message;
 }

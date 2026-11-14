@@ -9,7 +9,7 @@
 - User images/contact data: author supplied, not verified by Dwellio.
 - Reviews: user opinions; residency unverified, counts visible and absent reviews never generate a rating.
 - OpenStreetMap: external embedded map, visible attribution and link. It requires internet. No bulk/offline tile download.
-- Google Fonts: external font stylesheet, system-font fallback available.
+- Fonts: local system fonts; no external font request.
 
 Official references consulted:
 - https://learn.microsoft.com/en-us/aspnet/core/blazor/security/?view=aspnetcore-10.0

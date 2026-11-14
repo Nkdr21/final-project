@@ -3,7 +3,7 @@
 @inject SearchState Search
 @inject IRouteProvider Routes
 <PageTitle>Find a home — Dwellio</PageTitle>
-<div class="shell section"><div class="section-heading"><div><span class="eyebrow">ASTANA / FIND YOUR HOME</span><h1>Your next chapter starts here</h1><p class="muted">Your priorities first. Your address next.</p></div><a class="button secondary" href="/preferences">My lifestyle ↗</a></div>
+<div class="shell section"><div class="section-heading"><div><span class="eyebrow">ASTANA / FIND YOUR HOME</span><h1>Apartments in Astana</h1><p class="muted">Filter by budget, compare monthly costs and check nearby essentials.</p></div><a class="button secondary" href="/preferences">My lifestyle ↗</a></div>
 <div class="catalog-toolbar"><label>Rent budget, KZT<input type="number" min="10000" step="10000" @bind="budget" /></label><label>Search<input placeholder="Apartment or complex" @bind="query" @bind:event="oninput" /></label><label>Sort by<select @bind="sort"><option value="match">Best fit</option><option value="price">Lowest rent</option><option value="area">Largest space</option></select></label><button class="button" @onclick="Apply">Apply</button><button class="button secondary" @onclick="() => showMap = !showMap">@(showMap ? "Hide map" : "Show map")</button></div>
 <p role="status">@message</p><div class="results-info"><strong>@Filtered.Count matches</strong><span>up to @Labels.Money(Search.Preferences.Budget) · @Search.Preferences.WalkLimit min walk to essentials</span><a href="/compare">Compare (@Search.CompareIds.Count / 3) →</a></div>
 <p class="data-note">Demo data: journey times, nearby places and bus loads are scenarios, not live predictions. Scores reflect your selected weights.</p>
@@ -12,11 +12,18 @@
 <div class="cards">@foreach (var match in Filtered.Take(page * 9)) { <ApartmentCard Listing="listings.First(x => x.Id == match.Apartment.Id)" Complex="complexes.First(x => x.Id == match.Complex.Id)" Match="match" Selected="Search.CompareIds.Contains(match.Apartment.Id)" OnCompare="Compare" /> }</div>
 @if (Filtered.Count > page * 9) { <button class="button secondary load-more" @onclick="() => page++">Load more</button> }</div>
 @code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Search.LoadComparisonAsync();
+        StateHasChanged();
+    }
+
     List<ListingEntity> listings = []; List<ComplexEntity> complexes = []; List<Match> matches = [];
     decimal budget; string query = "", sort = "match", message = ""; bool loading = true, showMap; int page = 1, mapId = 1;
     List<Match> Filtered { get { var items = matches.Where(x => (x.Apartment.Title + x.Complex.Name).Contains(query, StringComparison.OrdinalIgnoreCase)); return (sort switch { "price" => items.OrderBy(x=>x.Apartment.Rent), "area" => items.OrderByDescending(x=>x.Apartment.Area), _ => items.OrderByDescending(x=>x.Score).ThenBy(x=>x.Apartment.Rent) }).ToList(); } }
     protected override async Task OnInitializedAsync() { if (!Search.Loaded) Search.Update(await Housing.LoadPreferences() ?? new()); budget = Search.Preferences.Budget; complexes = await Housing.Complexes(); listings = await Housing.Listings(); await Recalculate(); }
     async Task Apply() { var p = Search.Preferences with {Budget = budget}; var result = RecommendationEngine.Validate(p); if (!result.Success) { message = result.Message; return; } Search.Update(p); page = 1; await Recalculate(); }
     async Task Recalculate() { loading = true; matches.Clear(); foreach (var c in complexes) { var route = await Routes.GetAsync(c.ToModel(), Search.Preferences); foreach (var l in listings.Where(x=>x.ComplexId==c.Id)) { var m = RecommendationEngine.Evaluate(l.ToModel(), c.ToModel(), Search.Preferences, route); if (m is not null) matches.Add(m); } } loading = false; }
-    void Compare(int id) => message = Search.ToggleCompare(id).Message;
+    async Task Compare(int id) => message = (await Search.ToggleCompareAsync(id)).Message;
 }
