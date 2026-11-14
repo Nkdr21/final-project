@@ -1,0 +1,7 @@
+@page "/favorites"
+@attribute [Authorize]
+@inject HousingService Housing
+@inject SearchState Search
+<PageTitle>Saved homes — Dwellio</PageTitle>
+<div class="shell section"><span class="eyebrow">YOUR SHORTLIST</span><h1>Saved homes</h1>@if(items.Count==0){<p class="empty">Nothing saved yet. Save a home from its detail page.</p><a href="/catalog" class="button">Explore apartments</a>}<div class="cards">@foreach(var item in items){<div><ApartmentCard Listing="item" Complex="complexes.First(x=>x.Id==item.ComplexId)" Selected="Search.CompareIds.Contains(item.Id)" OnCompare="Compare"/><button class="link-button" @onclick="()=>Remove(item.Id)">Remove from saved</button></div>}</div><p role="status">@message</p></div>
+@code{List<ListingEntity> items=[];List<ComplexEntity> complexes=[];string message="";protected override async Task OnInitializedAsync(){complexes=await Housing.Complexes();var ids=await Housing.Favorites();items=(await Housing.Listings()).Where(x=>ids.Contains(x.Id)).ToList();}void Compare(int id)=>message=Search.ToggleCompare(id).Message;async Task Remove(int id){message=(await Housing.ToggleFavorite(id)).Message;items.RemoveAll(x=>x.Id==id);}}
