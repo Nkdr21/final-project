@@ -1,51 +1,47 @@
 # Dwellio
 
-Dwellio — учебное веб-приложение для подбора студенческого жилья в Астане с учётом бюджета, удобств и поездок на учёбу и обратно. Написано на C#/.NET 10 и Blazor Web App; данные хранятся в SQLite через Entity Framework Core. Учебный акцент — чистые функции, records, LINQ, pattern matching и тестирование логики C#.
+Dwellio is a student housing web application for Astana that explores rent, everyday amenities and travel preferences. It uses C#/.NET 10, Blazor Web App, Entity Framework Core and SQLite. The coursework focuses on records, pure functions, LINQ, pattern matching and testing C# business logic.
 
-## Скриншоты
+## Screenshots
 
-Сняты до добавления `/market` и нового заголовка; эти изменения пока не отражены на снимках. Размеры в Chrome: desktop — 1440×1000, mobile — 390×844 (эмуляция размера, не физический телефон).
+These screenshots show the earlier layout, before real rental cards were integrated into the catalog. Updated screenshots of the current catalog are not yet captured. Chrome sizes: desktop 1440×1000 and mobile 390×844 (viewport emulation, not a physical phone).
 
-| Экран | Desktop | Mobile |
+| Screen | Desktop | Mobile |
 |---|---|---|
-| Главная | ![Главная](docs/screenshots/home-desktop.jpg) | [Mobile](docs/screenshots/home-mobile.jpg) |
-| Подбор жилья | ![Каталог](docs/screenshots/catalog-desktop.jpg) | [Mobile](docs/screenshots/catalog-mobile.jpg) |
-| Карточка квартиры | ![Квартира](docs/screenshots/apartment-desktop.jpg) | [Mobile](docs/screenshots/apartment-mobile.jpg) |
-| Сравнение | ![Сравнение](docs/screenshots/compare-desktop.jpg) | [Mobile](docs/screenshots/compare-mobile.jpg) |
+| Home | [Desktop](docs/screenshots/home-desktop.jpg) | [Mobile](docs/screenshots/home-mobile.jpg) |
+| Catalog | [Desktop](docs/screenshots/catalog-desktop.jpg) | [Mobile](docs/screenshots/catalog-mobile.jpg) |
+| Apartment | [Desktop](docs/screenshots/apartment-desktop.jpg) | [Mobile](docs/screenshots/apartment-mobile.jpg) |
+| Comparison | [Desktop](docs/screenshots/compare-desktop.jpg) | [Mobile](docs/screenshots/compare-mobile.jpg) |
 
-## Возможности
+## Features
 
-- Указать бюджет, обязательные удобства и ограничения поездок.
-- Найти и отсортировать квартиры по своим предпочтениям; открыть реальные предложения с источниками на `/market`.
-- Посмотреть расходы, ЖК и объяснение результата подбора.
-- Сравнить до трёх квартир, включая расходы и транспортные сценарии.
-- Сохранить квартиры в избранное и записать свои предпочтения после входа.
-- Найти ЖК по названию и удобствам, прочитать или оставить отзыв.
-- Опубликовать и редактировать свои объявления с ролью Owner; с ролью Admin — скрывать и восстанавливать объявления и отзывы.
+- Browse sourced Astana rental examples in the main catalog, filter by rent, address or Mangilik El avenue, and open the original listing.
+- View source listing photos where available, review dates, deposits and archived-price labels.
+- Explore the expandable demo matching workflow with budget, amenity and commute preferences.
+- Compare up to three demo apartments, including costs and journey scenarios.
+- Save homes and preferences after signing in.
+- Search demo complexes by amenities and submit reviews.
+- Publish and edit your own listings as Owner; hide or restore listings and reviews as Admin.
 
-## Запуск
+## Run locally
 
-Требуется .NET SDK 10. Для VS Code рекомендуется C# Dev Kit.
-Из корня репозитория:
+Install .NET SDK 10. C# Dev Kit is recommended for VS Code. From the repository root:
 
 ```sh
 dotnet restore
 dotnet run --project src/Dwellio.Web --launch-profile http
 ```
 
-Откройте [http://localhost:5180](http://localhost:5180). Остановка — `Ctrl+C`.
-В VS Code также доступно **Terminal → Run Task → Dwellio: run**.
-Локальные базы автоматически создаются в `src/Dwellio.Web/App_Data/` и исключены из Git.
+Open [http://localhost:5180](http://localhost:5180). Stop with `Ctrl+C`.
+VS Code also provides **Terminal → Run Task → Dwellio: run**.
+Local SQLite databases are created under `src/Dwellio.Web/App_Data/` and excluded from Git.
 
-## Тестовые аккаунты
+## Test accounts
 
-Обычный аккаунт создаётся через **Sign in → Register as a new user**.
-Флажок **I want to publish listings** выбирает роль Owner; без него создаётся Student.
-Публичная регистрация Admin отсутствует.
-При запуске с заданной переменной окружения `DWELLIO_DEMO_PASSWORD` создаются демонстрационные аккаунты `student@dwellio.test`, `owner@dwellio.test`, `admin@dwellio.test`, если их ещё нет.
-Значение задаётся локально и должно соответствовать требованиям Identity. Пароли в репозитории не хранятся; изменение переменной не сбрасывает существующие пароли.
+Register through **Sign in → Register as a new user**. Select **I want to publish listings** for Owner; otherwise the role is Student. Public Admin registration is not available.
+Setting the local environment variable `DWELLIO_DEMO_PASSWORD` before startup creates `student@dwellio.test`, `owner@dwellio.test` and `admin@dwellio.test` if they do not exist. Choose a value satisfying Identity rules; do not commit it. Changing the variable does not reset existing passwords.
 
-## Тесты
+## Tests
 
 ```sh
 dotnet build
@@ -53,28 +49,27 @@ dotnet test
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
-Проверено 15.11.2026 на macOS: build — 0 ошибок, 0 предупреждений; тесты — 41 прошли, 0 упали, 0 пропущены (после обновления интерфейса и сохранения сравнения).
-[GitHub Actions](https://github.com/Nkdr21/final-project/actions/runs/43634904148): задания Windows, Linux и macOS завершились успешно.
-При запущенном приложении `python3 scripts/http_smoke.py` проверяет HTTP-страницы и перенаправления.
-Область тестов и ручные проверки: [docs/testing.md](docs/testing.md).
+Last completed check on 2026-11-15: 41 tests passed, none failed or skipped; build completed with zero errors and warnings. Photo/catalog HTTP checks and remaining visual checks are recorded in [testing notes](docs/testing.md).
+An earlier [GitHub Actions run](https://github.com/Nkdr21/final-project/actions/runs/43634904148) passed on Windows, Linux and macOS; it does not verify subsequent unpushed changes.
+With the app running, `python3 scripts/http_smoke.py` checks public HTTP pages and authorization redirects. It does not replace browser E2E tests.
 
-## Структура проекта
+## Project structure
 
-| Папка или файл | Назначение |
+| Path | Purpose |
 |---|---|
-| `src/Dwellio.Core/` | Модели C#, расчёты подбора и стоимости, фильтры удобств, транспортные сценарии |
-| `src/Dwellio.Web/` | Страницы Blazor, аккаунты, сервисы, база данных, стили |
-| `tests/Dwellio.Tests/` | Unit-тесты и интеграционные тесты с SQLite |
-| `docs/` | Архитектура, данные, критерии курса, тестирование и план команды |
-| `docs/screenshots/` | Снимки экранов приложения |
-| `scripts/` | HTTP smoke-проверка |
-| `.github/workflows/` | Автоматическая сборка и тесты |
-| `.vscode/` | Задачи запуска и рекомендации расширений |
-| `Dwellio.slnx`, `global.json` | Состав решения и выбор SDK |
+| `src/Dwellio.Core/` | C# models, matching and cost calculations, amenity filters, route scenarios |
+| `src/Dwellio.Web/` | Blazor pages, accounts, services, database, styles and sourced rental references |
+| `tests/Dwellio.Tests/` | Unit tests and SQLite integration tests |
+| `docs/` | Architecture, data, grading evidence, testing and team plan |
+| `docs/screenshots/` | Application screenshots |
+| `scripts/` | HTTP smoke checks |
+| `.github/workflows/` | Automated builds and tests |
+| `.vscode/` | Run tasks and extension recommendations |
+| `Dwellio.slnx`, `global.json` | Solution projects and SDK selection |
 
-## Архитектура и C#
+## Architecture and C#
 
-`Core` содержит вычисления без доступа к базе; `Web` связывает интерфейс, авторизацию и хранение данных. Тесты проверяют вычисления и операции сервиса.
+Core contains calculations without database access. Web connects the interface, authorization and persistence. Tests cover calculations and service operations.
 
 ```mermaid
 flowchart LR
@@ -85,38 +80,37 @@ flowchart LR
     Tests --> Service
 ```
 
-Подробности: [архитектура](docs/architecture.md), [C# и материалы лекций](docs/grading-checklist.md#functional-c-lecture-mapping).
+See [architecture](docs/architecture.md) and [lecture mapping](docs/grading-checklist.md#functional-c-lecture-mapping).
 
-## Данные
+## Data
 
-Исходные 8 ЖК и 32 квартиры, цены, координаты, удобства, время поездок и загруженность автобусов — демонстрационные данные. SVG-изображения — иллюстрации, не фотографии объектов.
-На `/market` добавлены 6 реальных примеров из объявлений Krisha.kz с ценой, адресом и ссылкой: это исследовательский снимок, актуальная доступность не подтверждена. Они отделены от демо-подбора.
-OpenStreetMap используется для внешней карты. Данные и изображения, добавленные пользователями, приложением не проверяются.
-Подробнее: [источники и ограничения данных](docs/data-sources.md).
+The main catalog contains six sourced rental examples with addresses, asking rents and original listing links. Availability is unconfirmed, one example is archived, and one source has conflicting prices. Photos load from the original listing provider where a photo URL was retrieved; failed images show a fallback.
+The expandable demo workflow uses eight fictional complexes and 32 apartments with synthetic coordinates, prices, amenities, routes and bus loads. Its SVG images are illustrations. Real examples are not assigned synthetic scores and are not yet integrated with demo comparison or favorites.
+See [data sources](docs/data-sources.md) for provenance and limitations.
 
-## Ограничения
+## Limitations
 
-- Email-подтверждение отключено; отправка писем не настроена.
-- Рабочий deployment серверного приложения не проверен; успешная публикация GitHub Pages не подтверждает работу Blazor Server и SQLite.
-- Автоматических browser end-to-end тестов нет; HTTP smoke их не заменяет.
-- Сравнение сохраняется при обновлении страницы в текущей вкладке через `sessionStorage`. Это не сохранение в аккаунт: между устройствами оно не синхронизируется. При запрете браузерного хранилища выбор сохраняется только до обновления.
-- Нет реальных транспортных прогнозов, проверки цен и подтверждения проживания авторов отзывов.
-- Каталог загружает не более 500 записей; расчёт и пагинация выполняются в памяти. Нагрузочные показатели не проверены.
-- Для housing-базы используется `EnsureCreated`; дальнейшее изменение схемы требует плана миграций.
-- Загрузка изображений ограничена 5 MB и базовой проверкой формата; квоты и очистка неиспользуемых файлов не реализованы.
-- Полная проверка доступности, нескольких браузеров и реальных мобильных устройств не завершена.
+- Email confirmation is disabled and email delivery is not configured.
+- Server deployment is not verified; GitHub Pages does not run Blazor Server and SQLite.
+- No repeatable browser E2E suite or completed accessibility/cross-browser audit exists.
+- Comparison persists through reload in the same tab using `sessionStorage`; it is not synchronized across devices. Blocked storage limits persistence to the current circuit.
+- Live routing, bus occupancy and rental availability are not verified. Reviewer residency is not verified.
+- Demo catalog computation is in memory with a 500-record cap; load performance is not measured.
+- The housing database uses `EnsureCreated`; schema changes need a migration plan.
+- Uploads have a 5 MB limit and basic signature checks; quotas and orphan cleanup are not implemented.
+- External source photos require internet and may disappear. Photo reuse permissions for redistribution have not been established.
 
-## Участники
+## Contributors
 
-`Nkdr21` и `Surrare`. Области ответственности описаны в [плане команды](docs/team-plan.md); фактические изменения участников проверяются по истории Git и Pull Request.
+`Nkdr21` and `Surrare`. Responsibilities are described in the [team plan](docs/team-plan.md). Actual contributions must be checked against commits and Pull Requests.
 
-## Документация
+## Documentation
 
-- [Архитектура и назначение папок](docs/architecture.md)
-- [Модель данных](docs/data-model.md)
-- [Источники данных](docs/data-sources.md)
-- [Правила подбора](docs/recommendations.md)
-- [Критерии курса и материалы C#](docs/grading-checklist.md)
-- [Проверки и тесты](docs/testing.md)
-- [План команды](docs/team-plan.md)
-- [План защиты](docs/defense.md)
+- [Architecture and folders](docs/architecture.md)
+- [Data model](docs/data-model.md)
+- [Data sources](docs/data-sources.md)
+- [Recommendation rules](docs/recommendations.md)
+- [Grading evidence and C# lectures](docs/grading-checklist.md)
+- [Testing](docs/testing.md)
+- [Team plan](docs/team-plan.md)
+- [Defense outline](docs/defense.md)

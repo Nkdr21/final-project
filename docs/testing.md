@@ -48,3 +48,11 @@ The HTTP smoke script verifies server rendering and redirect protection; it cann
 - Browser access was unavailable for this update; market filter interactions and new layout are not visually verified. Existing screenshots show the preceding interface version; the home headline and navigation have since changed.
 
 - Mangilik El extension: three examples added (Expo New Life-2, Promenade Expo, Dream City), avenue filter and archived-price label. Build and 41 tests passed; interactive avenue-filter check not performed.
+
+## Integrated catalog and English documentation — 2026-11-15
+
+- Main `/catalog` now displays six sourced examples with five source photo URLs and one explicit missing-photo fallback. `/market` redirects to `/catalog`; separate navigation was removed. The demo matching workflow remains expandable below the real cards.
+- All five source image endpoints returned HTTP 200 with image/jpeg in the previous verification. The final HTTP HTML check confirmed five remote image tags, no separate market navigation and fallback text. This does not certify visual browser rendering.
+- Fixed a Razor string-parameter binding discovered by the HTTP check before delivery. Build: zero warnings/errors; tests: 41/41 passed. Final HTTP smoke: 11 routes and 3 redirects passed on port 5184.
+- README, architecture, data sources and team plan are in English. Existing screenshots are outdated and explicitly labeled in README.
+- Browser automation was unavailable; photo rendering, image-error interaction and responsive layout still require a browser check.

@@ -1,0 +1,20 @@
+<div class="card-image market-photo">
+    @if (!string.IsNullOrWhiteSpace(Url) && !failed)
+    {
+        <img src="@Url" alt="@Alt" loading="lazy" width="750" height="470" referrerpolicy="no-referrer" @onerror="() => failed = true" />
+    }
+    else
+    {
+        <div class="photo-unavailable"><strong>Photo unavailable</strong><span>View photos in the original listing below.</span></div>
+    }
+</div>
+@code {
+    [Parameter] public string? Url { get; set; }
+    [Parameter] public string Alt { get; set; } = "Property photo from the source listing";
+    private bool failed;
+    private string? previousUrl;
+    protected override void OnParametersSet()
+    {
+        if (previousUrl != Url) { failed = false; previousUrl = Url; }
+    }
+}

@@ -2,7 +2,7 @@
 import urllib.request
 import sys
 base = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:5180'
-checks = {'/market': 'Real complexes. Published rental prices.', '/': 'Find a home that fits your life.', '/catalog': 'Apartments in Astana',
+checks = {'/market': 'Apartments in Astana', '/': 'Find a home that fits your life.', '/catalog': 'Apartments in Astana',
           '/preferences': 'What makes a home yours', '/complexes': 'neighbourhood',
           '/complex/1': 'Inside the complex', '/apartment/1': 'MONTHLY RENT',
           '/compare': 'Three places', '/about': 'Behind your matches',

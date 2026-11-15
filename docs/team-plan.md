@@ -1,16 +1,13 @@
-# Команда и распределение работы
+# Team responsibilities
 
-Участники: `Nkdr21` и `Surrare`. Полные имена пока не указаны.
-Это план ответственности; он не подтверждает завершение каждой задачи.
-Фактический вклад проверяется по изменениям, commit и Pull Request участников.
+Participants: `Nkdr21` and `Surrare`. Full names have not been supplied.
+This is a responsibility plan, not proof that each task has been completed.
+Actual contributions are evidenced by changes, commits and Pull Requests.
 
-| Участник | Область работы | Что объяснить на защите |
+| Participant | Area | Defense topics |
 |---|---|---|
-| Nkdr21 | Подбор жилья, предпочтения, расходы, транспортные сценарии, интеграция | Модели C#, чистые функции, LINQ, расчёт рейтинга и стоимости |
-| Surrare | ЖК, поиск и фильтры удобств, отзывы, тесты этой части | Фильтрация, группировка, валидация отзывов, unit-тесты |
-| Оба | Общие модели и сервисы, проверка приложения, презентация | Архитектура, хранение состояния, база данных, ограничения |
+| Nkdr21 | Matching, preferences, costs, route scenarios and integration | C# models, pure functions, LINQ, ranking and cost calculations |
+| Surrare | Complexes, amenity search/filtering, reviews and related tests | Filtering, grouping, review validation and unit tests |
+| Both | Shared models/services, application checks and presentation | Architecture, state management, database and limitations |
 
-Перед изменением `HousingService.cs` и общего CSS участники согласуют работу.
-Каждый работает в отдельной ветке, запускает `dotnet build` и `dotnet test`,
-создаёт commit с описанием своих изменений и Pull Request для проверки вторым участником.
-На защите оба участника должны понимать весь проект.
+Coordinate changes to `HousingService.cs` and shared CSS. Work on separate branches, run `dotnet build` and `dotnet test`, then open a Pull Request for the other participant to review. Both participants must understand the whole application for the defense.

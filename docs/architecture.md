@@ -29,22 +29,23 @@ flowchart LR
 
 SQLite and a single application process keep setup understandable. This is not a claim of production scalability. Catalog loads at most 500 rows, computes in memory and displays batches of nine; larger datasets need server pagination and query optimization. Current maps are embedded OpenStreetMap views, not a routing service. Uploads are limited to 5 MB and basic JPEG/PNG signature checks, with randomized filenames; production needs image decoding/re-encoding, storage quotas and orphan cleanup.
 
-## Навигация по проекту
+## Folder guide
 
-| Путь | Что находится внутри |
+| Path | Contents |
 |---|---|
-| `src/Dwellio.Core/Models/` | Records и типы результатов; структура входных и выходных данных |
-| `src/Dwellio.Core/Services/` | Чистые расчёты, фильтрация через LINQ, реализация транспортных сценариев |
-| `src/Dwellio.Web/Components/Pages/` | Страницы приложения: каталог, квартира, ЖК, сравнение и кабинеты |
-| `src/Dwellio.Web/Components/Shared/` | Повторно используемые карточки, карта и удобства |
-| `src/Dwellio.Web/Components/Layout/` | Общая оболочка и восстановление подключения |
-| `src/Dwellio.Web/Components/Account/` | Регистрация, вход и управление аккаунтом ASP.NET Core Identity |
-| `src/Dwellio.Web/Data/` | EF Core, сущности, начальные данные и миграции Identity |
-| `src/Dwellio.Web/Services/` | Проверка прав, сохранение данных и состояние текущего пользователя |
-| `src/Dwellio.Web/wwwroot/` | CSS, изображения и библиотечные ресурсы |
-| `src/Dwellio.Web/Properties/` | Профили локального запуска |
-| `tests/Dwellio.Tests/` | Проверка бизнес-правил C# и операций с SQLite |
+| `src/Dwellio.Core/Models/` | Records and typed input/output values |
+| `src/Dwellio.Core/Services/` | Pure calculations, LINQ filters and route scenarios |
+| `src/Dwellio.Web/Components/Pages/` | Catalog, apartment, complex, comparison and account pages |
+| `src/Dwellio.Web/Components/Shared/` | Reusable cards, photos, map, amenities and sourced catalog |
+| `src/Dwellio.Web/Components/Layout/` | Shared layout and reconnection UI |
+| `src/Dwellio.Web/Components/Account/` | ASP.NET Core Identity registration, login and management |
+| `src/Dwellio.Web/Data/` | EF entities, contexts, seed data, Identity migrations and market references |
+| `src/Dwellio.Web/Services/` | Authorization, persistence and scoped state |
+| `src/Dwellio.Web/wwwroot/` | CSS, images and library assets |
+| `src/Dwellio.Web/Properties/` | Local launch profiles |
+| `tests/Dwellio.Tests/` | C# rules and SQLite integration tests |
 
-`bin/`, `obj/`, `App_Data/` и `TestResults/` создаются локально и не входят в исходный код Git.
-Главные примеры для защиты по C#: `Housing.cs`, `RecommendationEngine.cs`,
-`NeighborhoodService.cs` и соответствующие тесты.
+`bin/`, `obj/`, `App_Data/` and `TestResults/` are generated locally and excluded from source control.
+Start the C# walkthrough with `Housing.cs`, `RecommendationEngine.cs`, `NeighborhoodService.cs` and their tests.
+
+The main catalog renders `MarketCatalog` first and keeps the synthetic matching workflow in an expandable section. `/market` redirects to `/catalog`. Market references are immutable in-memory records, not database replacements. `ListingPhoto` displays an externally hosted source photo or an explicit fallback; source URLs remain available on each card.

@@ -18,28 +18,27 @@ Official references consulted:
 
 A future real-route adapter needs verified coverage, cost, caching rules and attribution. Missing live crowding data must remain unknown.
 
-## Реальные предложения: исследовательская выборка
+## Sourced rental examples
 
-Дата просмотра доступных страниц: 15.11.2026. Полученные страницы могут быть кэшированными (возраст снимков — от нескольких дней до месяца); это не дата обновления объявления. Цены — запрошенная месячная аренда конкретных квартир, не средняя цена ЖК. Доступность не подтверждена.
+Review date: 2026-11-15. Retrieved pages may be cached, from several days to a month old. This is not the listing update date. Prices are individual asking rents, not complex averages. Availability has not been confirmed.
 
-| ЖК | Адрес из объявления | Комнаты / площадь | Аренда | Депозит | Источник |
+| Complex | Address | Rooms / area | Rent, KZT/month | Deposit, KZT | Source |
 |---|---|---|---|---|---|
-| GreenLine.Silva | Е-899 5 | 1 / 35 м² | 250 000 ₸ | 100 000 ₸ | [Объявление](https://krisha.kz/a/show/1010117448) |
-| GreenLine.Tokyo | Мухамедханова 4б | 1 / 48 м² | 290 000 ₸ | 50 000 ₸ | [Объявление](https://krisha.kz/a/show/672000122), [прочитанная выдача](https://krisha.kz/arenda/kvartiry/astana/?das%5Bmap.complex%5D=1152) |
-| GreenLine.Headliner | Толе би 48/1 | 2 / 61 м² | 400 000 ₸ | Не указан | [Объявление](https://krisha.kz/a/show/1008481040) |
+| GreenLine.Silva | E-899 5 | 1 / 35 m² | 250,000 | 100,000 | [Listing](https://krisha.kz/a/show/1010117448) |
+| GreenLine.Tokyo | Mukhamedkhanov Street 4B | 1 / 48 m² | 290,000 | 50,000 | [Listing](https://krisha.kz/a/show/672000122), [readable search results](https://krisha.kz/arenda/kvartiry/astana/?das%5Bmap.complex%5D=1152) |
+| GreenLine.Headliner | Tole Bi Street 48/1 | 2 / 61 m² | 400,000 | Unknown | [Listing](https://krisha.kz/a/show/1008481040) |
+| Expo New Life-2 | Mangilik El Avenue 51/2 | 2 / 77 m² | 330,000 | 200,000 | [Listing](https://krisha.kz/a/show/1002990387) |
+| Promenade Expo | Mangilik El Avenue 52 | 2 / 74 m² | 300,000 (archived) | Unknown | [Archived listing](https://krisha.kz/a/show/1017128178) |
+| Dream City | Mangilik El Avenue 47 | 2 / 70 m² | 350,000 headline / 400,000 description | 200,000 in description | [Listing](https://krisha.kz/a/show/1013748996) |
 
-Silva и Headliner проверены по тексту индивидуальных страниц. Tokyo — по выдаче ЖК: индивидуальная страница не загрузилась. Для Silva и Tokyo коммунальные услуги оплачиваются отдельно, сумма неизвестна. Для Headliner стоимость коммунальных услуг не указана.
+Tokyo was checked against the complex search results because its individual page could not be fetched; no photo URL has been verified for it. Other examples were read from their individual listing pages. Silva, Tokyo, Expo New Life-2 and Dream City charge utilities separately; the amount is unknown. Headliner's utility amount is unknown. Expo New Life-2 requests two months of rent in advance. Promenade Expo is archived and shown only as a historical price example. Dream City's conflicting rent values are explicitly shown in its card evidence.
 
-[BI Group](https://bi.group/ru/bigville/greenline) описывает инфраструктуру всего GreenLine. Эти сведения не доказывают наличие спортзала, парка или коворкинга в каждом отдельном корпусе. Проверенные координаты, маршруты, время пешком и загруженность автобусов для этих примеров отсутствуют.
+[BI Group](https://bi.group/ru/bigville/greenline) describes infrastructure across the wider GreenLine development. This does not verify a gym, park or coworking space inside every building. Coordinates, walking times, transport routes and bus occupancy have not been established for these examples.
 
-Код: `src/Dwellio.Web/Data/MarketReferences.cs`; интерфейс `/market`. Реальные примеры отделены от синтетических объектов подбора и не записываются поверх пользовательской SQLite-базы. Фотографии доступны на исходных страницах; права на повторную публикацию не получены, поэтому фотографии не копируются. Контакты владельцев и полные тексты описаний не импортируются.
+Implementation: `src/Dwellio.Web/Data/MarketReferences.cs`, displayed in the main `/catalog` through `MarketCatalog`. No user database is overwritten. Real examples are not assigned demo commute scores.
 
-### Мәңгілік Ел: дополнение 15.11.2026
+## Source photos
 
-| ЖК | Адрес | Комнаты / площадь | Аренда в источнике | Депозит | Источник и статус |
-|---|---|---|---|---|---|
-| Expo New Life-2 | Мәңгілік Ел 51/2 | 2 / 77 м² | 330 000 ₸ | 200 000 ₸ | [Объявление](https://krisha.kz/a/show/1002990387); актуальная доступность не подтверждена |
-| Promenade Expo | Мәңгілік Ел 52 | 2 / 74 м² | 300 000 ₸ | Не подтверждён | [Архивное объявление](https://krisha.kz/a/show/1017128178); только исторический пример цены |
-| Dream City | Мәңгілік Ел 47 | 2 / 70 м² | 350 000 ₸ | Не подтверждён | [Объявление](https://krisha.kz/a/show/1013748996); актуальная доступность не подтверждена |
+Five photo URLs were extracted from image links on the matching individual listing pages. They are loaded directly from `krisha-photos.kcdn.online`; no copies are stored in the repository. Each card links to the original listing and credits Krisha.kz as its source. A blocked or missing image produces an explicit fallback. Tokyo has no verified image URL and uses the fallback.
 
-Адреса и характеристики сопоставлены с индивидуальными страницами и поисковой выдачей Krisha.kz. Для Expo New Life-2 указаны отдельная оплата коммунальных услуг и предоплата аренды за два месяца. Это условие отражено в карточке. В интерфейсе добавлен фильтр `Along Mangilik El avenue`; архивный Promenade Expo явно отмечен. Все шесть примеров остаются исследовательской выборкой, не текущей базой свободных квартир.
+The images are advertiser-supplied listing photos, not independently authenticated pictures. Attribution does not establish a redistribution license. Reuse permissions have not been obtained; obtain appropriate permission before redistributing or publicly deploying these photos. No BI Group photographs, owner contacts or full listing descriptions are copied.
