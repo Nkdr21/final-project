@@ -65,10 +65,12 @@ Setting the local environment variable `DWELLIO_DEMO_PASSWORD` before startup cr
 dotnet build
 dotnet test                                     # 98 tests
 python3 scripts/http_smoke.py                   # with the app running
-npm ci --prefix scripts && node scripts/browser-audit.mjs   # optional, needs Chrome
+npm ci --prefix scripts && node scripts/browser-audit.mjs   # needs Chrome
+DWELLIO_BROWSER=firefox node scripts/browser-audit.mjs      # after: npx playwright install firefox
+DWELLIO_MOBILE=1 node scripts/browser-audit.mjs             # 390 px phone profile
 ```
 
-Last check on 2026-11-15: build with zero warnings, 98 tests passed, HTTP smoke test and browser audit passed. See [testing](docs/testing.md). [GitHub Actions](https://github.com/Nkdr21/final-project/actions) runs build and tests on Windows, Linux and macOS.
+Last check on 2026-11-15: build with zero warnings, 98 tests passed. HTTP smoke test and browser audit passed in Chromium (desktop and phone profile) and Firefox. Lighthouse accessibility on the planner: 1.0 on mobile and desktop. See [testing](docs/testing.md). [GitHub Actions](https://github.com/Nkdr21/final-project/actions) runs build and tests on Windows, Linux and macOS, then the browser checks on Linux.
 
 ## Data sources
 
@@ -89,7 +91,7 @@ Details, licences and limits: [data sources](docs/data-sources.md).
 | `src/Dwellio.Core/` | Pure C#: geo maths, place catalogue and spatial index, area analysis, seat model, journey planner, home matching |
 | `src/Dwellio.Web/` | Blazor pages and components, state container, open-data clients, accounts, database, bundled data |
 | `tests/Dwellio.Tests/` | Unit, integration (SQLite, real data) and service tests with fake HTTP/browser storage |
-| `docs/` | Architecture, data model, sources, calculations, testing, grading evidence, defence guide |
+| `docs/` | Architecture, data model, sources, calculations, testing, presentation material, grading evidence, defence guide |
 | `scripts/` | Open-data snapshot builders, HTTP smoke test, browser audit |
 | `.github/workflows/` | CI build and tests |
 
@@ -113,7 +115,7 @@ See [architecture](docs/architecture.md), [how results are calculated](docs/reco
 - OpenStreetMap is volunteer-mapped: some places are missing (few gyms are mapped in Astana).
 - "Sample price" homes are real buildings with illustrative rents; sourced rents may be outdated.
 - Email confirmation is disabled; server deployment is not verified.
-- Physical phones, Safari/Firefox and full accessibility audits are not yet tested.
+- Safari (WebKit) and physical phones are not tested. Accessibility is checked automatically on the planner page only; manual screen-reader testing is still to do.
 
 ## Contributors
 
@@ -125,6 +127,7 @@ See [architecture](docs/architecture.md), [how results are calculated](docs/reco
 - [Data model](docs/data-model.md)
 - [Data sources](docs/data-sources.md)
 - [How results are calculated](docs/recommendations.md)
+- [Presentation material](docs/presentation.md)
 - [Testing](docs/testing.md)
 - [Grading evidence and lecture mapping](docs/grading-checklist.md)
 - [Team plan](docs/team-plan.md)

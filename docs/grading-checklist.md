@@ -17,13 +17,13 @@ The rubric has 20 criteria at 5% each. This records what is implemented and wher
 | Efficiency | Spatial grid index, per-complex memoisation in `IMemoryCache`, background computation, cancellation of stale work, lazy images, no prerender double work | No formal benchmark |
 | Scalability | Immutable shared index (lock-free reads), cache keyed by plan, tile-based live refresh shared between users | SQLite, single server |
 | Resource utilization | One Overpass request per ~1 km tile per 72 h shared by all users; Nominatim rate gate; `IHttpClientFactory` | — |
-| Automated testing | 98 xUnit tests (unit, SQLite integration, fake HTTP, fake browser storage, real data) + HTTP smoke + browser audit | Signed-in browser flows |
-| Quality assurance | Desktop/mobile screenshots, browser audit without console errors | Cross-browser manual QA |
-| Documentation | README, architecture, data model, data sources, calculations, testing, defence guide | — |
+| Automated testing | 98 xUnit tests (unit, SQLite integration, fake HTTP, fake browser storage, real data) + HTTP smoke + browser audit in CI | Signed-in browser flows not automated |
+| Quality assurance | Browser audit passes in Chromium (desktop and phone), Firefox; Lighthouse accessibility 1.0 on the planner (mobile and desktop); CI browser job | Manual cross-browser QA; WebKit not run |
+| Documentation | README, architecture, data model, data sources, calculations, testing, presentation material, defence guide, user guide in README | — |
 | Innovation | Seat chance from GPS dwell times; "walk back to an emptier stop" and "leave earlier" tactics; best-area search | — |
 | Creative C# / FP | Records + `with`, `ImmutableArray`, folds (`Aggregate`) for bus load and area selection, function composition (`Combine`), pattern matching on plan cases, `FrozenDictionary`, `ILookup` index, generic/templated components | — |
 | Professionalism | Data provenance on every card/map, licences attributed, no keys or secrets, polite API use | Not production-deployed |
-| Presentation | `defense.md` demo script | Slides and rehearsal are yours |
+| Presentation | `presentation.md` (aim, goals, technology comparison, UML, architecture, methodology); `defense.md` demo script | Slides and rehearsal are yours |
 
 ## Functional C# lecture mapping
 

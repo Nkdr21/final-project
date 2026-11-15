@@ -4,7 +4,7 @@
     @foreach (var category in PlaceCatalog.All)
     {
         var state = StateOf(category.Key);
-        <button type="button" class="need-chip @state" title="@category.Hint" aria-label="@AriaLabel(category, state)"
+        <button type="button" class="need-chip @state" title="@Tooltip(category, state)"
                 @onclick="() => Cycle(category.Key)">
             <span class="emoji" aria-hidden="true">@category.Icon</span>
             @category.Label
@@ -23,11 +23,12 @@
     private string StateOf(string key) =>
         MustHaves.NullToEmpty().Contains(key) ? "must" : Needs.NullToEmpty().Contains(key) ? "want" : "off";
 
-    private static string AriaLabel(PlaceCategory c, string state) => state switch
+    // The accessible name is the visible text ("Gym want"); the next action goes into the tooltip.
+    private static string Tooltip(PlaceCategory c, string state) => state switch
     {
-        "must" => $"{c.Label}: must-have. Activate to remove.",
-        "want" => $"{c.Label}: nice to have. Activate to make it a must-have.",
-        _ => $"{c.Label}: not selected. Activate to add.",
+        "must" => $"{c.Hint}. Must-have: activate to remove.",
+        "want" => $"{c.Hint}. Nice to have: activate to make it a must-have.",
+        _ => $"{c.Hint}. Activate to add as a nice to have.",
     };
 
     // Pure transition: (state, key) -> next state.

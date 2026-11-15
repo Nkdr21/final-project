@@ -34,22 +34,54 @@ Checks every page answers with the app shell, assets (Leaflet, map module) are s
 ## Browser audit
 
 ```sh
-npm ci --prefix scripts            # Node.js 22+
-node scripts/browser-audit.mjs     # uses Google Chrome; or CHROME_PATH=/usr/bin/chromium
+npm ci --prefix scripts                              # Node.js 22+
+node scripts/browser-audit.mjs                       # Google Chrome
+CHROME_PATH=/usr/bin/chromium node scripts/browser-audit.mjs
+DWELLIO_BROWSER=firefox node scripts/browser-audit.mjs    # after: npx playwright install firefox
+DWELLIO_MOBILE=1 node scripts/browser-audit.mjs      # 390 px phone profile
 ```
 
-Last run 2026-11-15 on Linux, Chromium, desktop 1440×1000 — all passed with no console errors:
+The audit waits for Blazor to connect before every navigation and lets each plan change settle before the next step (the planner recalculates after each change).
 
-- Areas tab shows 6 ranked areas.
+Checks (same in every browser):
+
+- Areas tab shows ranked areas.
 - Making "Spa & sauna" a must-have changes results (6 → 0 homes: no mapped sauna near any listing).
 - Budget 0 is rejected with a message.
 - Two homes in comparison survive a reload.
-- Changing the destination to Khan Shatyr survives a reload.
+- Destination change survives a reload.
 - Commute planner from Comfort Town shows options and the bus load chart.
 - Home details render; a missing home and an invalid area link show friendly pages.
+- No console errors.
 
-Screenshots in `docs/screenshots/` were captured the same day at 1440×1000 and 390×844 (emulated phone).
+| Browser / profile | Result (2026-11-15, Linux) |
+|---|---|
+| Chromium, desktop 1440×1000 | Passed, no console errors |
+| Chromium, phone 390×844 (touch, mobile emulation) | Passed, no console errors |
+| Firefox (Playwright build 1572), desktop | Passed, no console errors |
+| WebKit / Safari | **Not run:** Playwright's WebKit could not be installed on this Ubuntu 24.04 machine |
+| Physical iPhone / Android | **Not run** |
+
+## Accessibility (Lighthouse)
+
+Results are in [accessibility.json](accessibility.json): the planner page (`/plan`), accessibility category, Lighthouse 13.6.0.
+
+| Mode | Score | Failing automated audits |
+|---|---|---|
+| Mobile | 1.0 | none |
+| Desktop | 1.0 | none |
+
+Found and fixed in this run: muted text below contrast requirements, score badges with white text on light backgrounds, links inside paragraphs without underline, and need chips whose accessible names did not contain their visible text. Scope: automated checks on one page; manual screen-reader testing has not been done.
+
+## Continuous integration
+
+`.github/workflows/dotnet.yml` runs:
+
+1. **test** on Ubuntu, Windows and macOS: build, then `dotnet test` with coverage.
+2. **browser-checks** on Ubuntu (after `test`): starts the app, runs the HTTP smoke test, then the browser audit in Chrome and in the phone profile.
+
+The workflow was extended on 2026-11-15; check the Actions tab for the first green run of the new job before presenting.
 
 ## Not yet verified
 
-Physical phones, Safari/Firefox, screen readers end to end, signed-in browser flows, load testing.
+Safari/WebKit, physical phones, screen readers end to end, signed-in browser flows, load testing.

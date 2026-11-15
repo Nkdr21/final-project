@@ -6,7 +6,7 @@
 :root {
     --ink: #172033;
     --ink-soft: #3b4559;
-    --muted: #667085;
+    --muted: #4b5565; /* 7:1 on white; was #667085 (below WCAG AA on tinted surfaces) */
     --bg: #f5f6fa;
     --surface: #ffffff;
     --surface-2: #f0f2f8;
@@ -43,6 +43,7 @@ h2 { font-size: clamp(20px, 2.6vw, 26px); font-weight: 750; }
 h3 { font-size: 17px; font-weight: 700; }
 p { margin: 0 0 1em; }
 a { color: var(--primary); text-decoration: none; }
+p a, li a, .note a, .lead a, .callout a, .status a { text-decoration: underline; text-underline-offset: 3px; }
 a:hover { color: var(--primary-strong); text-decoration: underline; }
 img { max-width: 100%; display: block; }
 small, .muted { color: var(--muted); }
@@ -281,9 +282,9 @@ details.more[open] summary { margin-bottom: 10px; }
     display: inline-grid; place-items: center; min-width: 46px; height: 46px; border-radius: 14px; font-weight: 800; font-size: 17px;
     background: var(--primary); color: #fff; box-shadow: var(--shadow);
 }
-.score.mid { background: #6366f1; }
-.score.low { background: #8b93a7; }
-.score small { display: block; font-size: 9px; font-weight: 600; color: rgba(255, 255, 255, .85); line-height: 1; }
+.score.mid { background: #5a4fd6; }
+.score.low { background: #5f6b82; }
+.score small { display: block; font-size: 9px; font-weight: 600; color: #fff; line-height: 1; }
 .why { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; color: var(--ink-soft); }
 .why li { display: flex; gap: 6px; }
 .why li::before { content: "✓"; color: var(--good); font-weight: 800; }

@@ -18,3 +18,41 @@ jobs:
       - run: dotnet restore
       - run: dotnet build --no-restore --configuration Release
       - run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
+
+  browser-checks:
+    # Runs the HTTP smoke test and the browser audit against a live server (Linux runner, Chrome preinstalled).
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: dotnet restore
+      - run: dotnet build --no-restore --configuration Release
+      - name: Start Dwellio
+        env:
+          ASPNETCORE_URLS: http://localhost:5180
+          ASPNETCORE_ENVIRONMENT: Development
+          DWELLIO_DATA_PATH: ${{ runner.temp }}/dwellio-data
+        run: |
+          dotnet run --no-build --configuration Release --project src/Dwellio.Web --no-launch-profile > "$RUNNER_TEMP/dwellio.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:5180/ > /dev/null && break; sleep 2; done
+          curl -sf http://localhost:5180/ > /dev/null
+      - run: python3 scripts/http_smoke.py http://localhost:5180
+      - run: npm ci --prefix scripts
+      - name: Browser audit (Chrome)
+        env:
+          DWELLIO_URL: http://localhost:5180
+          DWELLIO_BROWSER: chrome
+        run: node scripts/browser-audit.mjs
+      - name: Browser audit (phone profile)
+        env:
+          DWELLIO_URL: http://localhost:5180
+          DWELLIO_MOBILE: '1'
+        run: node scripts/browser-audit.mjs
+      - if: failure()
+        run: cat "$RUNNER_TEMP/dwellio.log" || true

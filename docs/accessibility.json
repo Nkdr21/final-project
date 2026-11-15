@@ -1,9 +1,22 @@
 {
-  "url": "http://localhost:5180/catalog",
-  "fetchedAt": "2026-11-15T08:25:03.075Z",
-  "lighthouseVersion": "13.6.0",
-  "mode": "mobile",
-  "accessibilityScore": 1,
-  "failedAutomatedAudits": [],
-  "scope": "Catalog only; does not certify manual accessibility or other pages"
+  "runs": [
+    {
+      "url": "http://localhost:5181/plan",
+      "mode": "mobile",
+      "accessibilityScore": 1,
+      "failedAutomatedAudits": [],
+      "fetchedAt": "2026-11-15T12:46:30.063Z",
+      "lighthouseVersion": "13.6.0",
+      "scope": "Planner page /plan (served from a local Development build, 2026-11-15). Automated checks only; does not certify manual accessibility or other pages."
+    },
+    {
+      "url": "http://localhost:5181/plan",
+      "mode": "desktop",
+      "accessibilityScore": 1,
+      "failedAutomatedAudits": [],
+      "fetchedAt": "2026-11-15T12:46:40.131Z",
+      "lighthouseVersion": "13.6.0",
+      "scope": "Planner page /plan (served from a local Development build, 2026-11-15). Automated checks only; does not certify manual accessibility or other pages."
+    }
+  ]
 }
