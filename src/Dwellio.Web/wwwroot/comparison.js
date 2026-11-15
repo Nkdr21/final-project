@@ -15,3 +15,17 @@ window.dwellioComparison = {
         } catch { return false; }
     }
 };
+
+// Sourced examples use a separate key from synthetic demo apartment IDs.
+window.dwellioMarket = {
+    read() {
+        try {
+            const urls = JSON.parse(sessionStorage.getItem("dwellio.market.v1") || "[]");
+            return Array.isArray(urls) ? urls.filter(x => typeof x === "string").slice(0, 3) : [];
+        } catch { return []; }
+    },
+    write(urls) {
+        try { sessionStorage.setItem("dwellio.market.v1", JSON.stringify(urls)); return true; }
+        catch { return false; }
+    }
+};

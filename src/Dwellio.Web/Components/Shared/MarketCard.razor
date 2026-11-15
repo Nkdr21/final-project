@@ -1,0 +1,31 @@
+@inject MarketShortlist Shortlist
+            <article class="apartment-card" ><ListingPhoto Url="@Home.PhotoUrl" Alt="@($"Property photo from the {Home.Complex} source listing")" /><div class="card-body">
+                <span class="eyebrow">SOURCE: KRISHA.KZ</span>
+                <h2>@Home.Complex</h2>
+                @if (Home.Archived) { <p class="data-note"><strong>Archived · historical price</strong></p> }
+                <p>@Home.Address</p>
+                <p>@Home.Rooms room(s) · @Home.Area m²</p>
+                <div class="card-bottom"><strong>@Labels.Money(Home.Rent)</strong><small>/ month · asking rent</small></div>
+                <dl><dt>Deposit</dt><dd>@(Home.Deposit.HasValue ? Labels.Money(Home.Deposit.Value) : "Not provided")</dd>
+                    <dt>Utilities, transport and gym</dt><dd>Not included in this price comparison</dd></dl>
+                <p class="data-note">@Home.Evidence</p>
+                <a class="button secondary full" href="@Home.SourceUrl" target="_blank" rel="noopener noreferrer">View listing &amp; photos ↗</a>
+            <button class="button full" aria-pressed="@Shortlist.Selected.Contains(Home.SourceUrl)" @onclick="Toggle">@(Shortlist.Selected.Contains(Home.SourceUrl) ? "Remove from source comparison" : "Compare sourced home")</button>
+                <p role="status">@message</p>
+            </div></article>
+@code {
+    [Parameter, EditorRequired] public MarketReference Home { get; set; } = default!;
+    [Parameter] public EventCallback Changed { get; set; }
+    string message = "";
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Shortlist.LoadAsync();
+        StateHasChanged();
+    }
+    async Task Toggle()
+    {
+        message = (await Shortlist.ToggleAsync(Home.SourceUrl)).Message;
+        await Changed.InvokeAsync();
+    }
+}

@@ -20,21 +20,11 @@
     {
         <div class="empty"><h2>No examples within these filters</h2><p>Try a higher budget, another complex name or turn off the avenue filter. This is a small research sample, not the whole Astana rental market.</p></div>
     }
+    <p><a class="button secondary" href="/compare">Open comparison →</a></p>
     <div class="cards">
         @foreach (var home in Filtered)
         {
-            <article class="apartment-card" @key="home.SourceUrl"><ListingPhoto Url="@home.PhotoUrl" Alt="@($"Property photo from the {home.Complex} source listing")" /><div class="card-body">
-                <span class="eyebrow">SOURCE: KRISHA.KZ</span>
-                <h2>@home.Complex</h2>
-                @if (home.Archived) { <p class="data-note"><strong>Archived · historical price</strong></p> }
-                <p>@home.Address</p>
-                <p>@home.Rooms room(s) · @home.Area m²</p>
-                <div class="card-bottom"><strong>@Labels.Money(home.Rent)</strong><small>/ month · asking rent</small></div>
-                <dl><dt>Deposit</dt><dd>@(home.Deposit.HasValue ? Labels.Money(home.Deposit.Value) : "Not provided")</dd>
-                    <dt>Utilities, transport and gym</dt><dd>Not included in this price comparison</dd></dl>
-                <p class="data-note">@home.Evidence</p>
-                <a class="button secondary full" href="@home.SourceUrl" target="_blank" rel="noopener noreferrer">View listing &amp; photos ↗</a>
-            </div></article>
+            <MarketCard Home="home" Changed="Refresh" />
         }
     </div>
     <section class="form-section">
@@ -46,6 +36,7 @@
     </section>
 </div>
 @code {
+    void Refresh() => StateHasChanged();
     private string query = "", sort = "price";
     private decimal budget = 500000;
     private bool mangilikOnly;

@@ -1,9 +1,10 @@
-import { chromium } from 'playwright';
+import { chromium, firefox, webkit } from 'playwright';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 const base = process.env.DWELLIO_URL || 'http://localhost:5180';
 const screenshots = process.env.DWELLIO_SCREENSHOTS;
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const engine = process.env.DWELLIO_BROWSER || 'chrome';
+const browser = engine === 'firefox' ? await firefox.launch() : engine === 'webkit' ? await webkit.launch() : await chromium.launch({ channel: 'chrome', headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 page.setDefaultTimeout(15000);
 const results = [];
@@ -28,6 +29,16 @@ try {
   await visibleText('3 sourced examples');
   await page.getByLabel('Along Mangilik El avenue').uncheck();
   pass('Source filtering, empty state and avenue filter');
+  await page.getByRole('button',{name:'Compare sourced home',exact:true}).first().click();
+  await page.getByRole('button',{name:'Remove from source comparison',exact:true}).first().waitFor();
+  await page.getByRole('button',{name:'Compare sourced home',exact:true}).first().click();
+  await page.getByRole('button',{name:'Remove from source comparison',exact:true}).nth(1).waitFor();
+  await page.getByRole('navigation').getByRole('link',{name:'Compare',exact:true}).click();
+  await page.locator('.source-comparison-item').nth(1).waitFor();
+  await page.reload();
+  await page.locator('.source-comparison-item').nth(1).waitFor();
+  pass('Sourced homes compare and survive reload');
+
   for (const path of ['/admin', '/owner/edit/1']) {
     await page.goto(base + path);
     await page.waitForURL(/Account\/Login/);
@@ -80,7 +91,7 @@ try {
     pass(`Four pages fit ${width}x${height} viewport`);
   }
   await open('/catalog');
-  for(let i=0;i<20 && await page.evaluate(()=>document.activeElement.textContent)!=='Skip to content';i++) await page.keyboard.press('Shift+Tab');
+  for(let i=0;i<20 && await page.evaluate(()=>document.activeElement.textContent)!=='Skip to content';i++) await page.keyboard.press(engine === 'webkit' ? 'Alt+Shift+Tab' : 'Shift+Tab');
   assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Skip to content');
   await page.keyboard.press('Enter');
   assert.equal(await page.evaluate(()=>location.hash),'#main-content');

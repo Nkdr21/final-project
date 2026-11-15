@@ -24,7 +24,8 @@ builder.Services.AddAuthentication(options =>
     })
     .AddIdentityCookies();
 
-var dataPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
+var dataPath = builder.Configuration["DWELLIO_DATA_PATH"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data");
 Directory.CreateDirectory(dataPath);
 var connectionString = $"Data Source={Path.Combine(dataPath, "identity.db")}";
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -47,6 +48,7 @@ builder.Services.AddDbContextFactory<HousingDbContext>(options =>
     options.UseSqlite($"Data Source={Path.Combine(dataPath, "housing.db")}"));
 builder.Services.AddScoped<HousingService>();
 builder.Services.AddScoped<SearchState>();
+builder.Services.AddScoped<MarketShortlist>();
 builder.Services.AddSingleton<IRouteProvider, DemoRouteProvider>();
 
 var app = builder.Build();

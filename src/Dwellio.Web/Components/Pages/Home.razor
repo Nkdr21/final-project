@@ -1,6 +1,4 @@
 @page "/"
-@inject HousingService Housing
-@inject SearchState Search
 <PageTitle>Student housing in Astana — Dwellio</PageTitle>
 <section class="housing-intro shell">
     <span class="eyebrow">ASTANA · STUDENT HOUSING</span>
@@ -14,10 +12,9 @@
     <div class="home-links"><a href="/complexes">Explore residential complexes →</a><a href="/compare">Open comparison →</a></div>
 </section>
 <section class="shell section">
-    <div class="section-heading"><div><span class="eyebrow">APARTMENTS</span><h2>Explore available listings</h2></div><a class="text-link" href="/catalog">View all apartments →</a></div>
-    <p class="data-note">Study collection: fictional listings and complexes, with concept illustrations.</p>
-    <div class="cards">@foreach (var item in listings) { <ApartmentCard Listing="item" Complex="complexes.First(c => c.Id == item.ComplexId)" Selected="Search.CompareIds.Contains(item.Id)" OnCompare="Compare" /> }</div>
-    <p role="status">@message</p>
+    <div class="section-heading"><div><span class="eyebrow">APARTMENTS</span><h2>Explore sourced homes</h2></div><a class="text-link" href="/catalog">View all apartments →</a></div>
+    <p class="data-note">Published rental examples, not a live availability feed. Confirm prices and terms with the original advertiser.</p>
+    <div class="cards">@foreach (var home in MarketReferences.All.Where(x => !x.Archived && x.PhotoUrl is not null).Take(3)) { <MarketCard Home="home" Changed="Refresh" /> }</div>
 </section>
 <section class="shell housing-guide">
     <h2>Check more than the monthly rent</h2>
@@ -27,15 +24,4 @@
         <div><h3>Travel both ways</h3><p>Compare morning and evening journey scenarios. Live bus occupancy is not available.</p></div>
     </div>
 </section>
-@code {
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) return;
-        await Search.LoadComparisonAsync();
-        StateHasChanged();
-    }
-
-    List<ListingEntity> listings = []; List<ComplexEntity> complexes = []; string message = "";
-    protected override async Task OnInitializedAsync() { complexes = await Housing.Complexes(); listings = (await Housing.Listings()).OrderBy(x => x.Id).Where(x => x.Id % 5 == 1).Take(3).ToList(); }
-    async Task Compare(int id) => message = (await Search.ToggleCompareAsync(id)).Message;
-}
+@code { void Refresh() => StateHasChanged(); }

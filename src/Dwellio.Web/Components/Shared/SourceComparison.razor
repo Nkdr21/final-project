@@ -1,0 +1,28 @@
+@inject MarketShortlist Shortlist
+<section class="shell section" aria-label="Sourced home comparison">
+    <h2>Sourced homes</h2>
+    <p>Compare published asking rent, size and deposit. Utilities, amenities and travel times remain unverified; no lifestyle score is invented.</p>
+    @if (Homes.Count == 0)
+    {
+        <div class="empty"><p>Select “Compare sourced home” in the catalog to compare up to three real examples.</p><a class="button" href="/catalog">Browse sourced homes</a></div>
+    }
+    else
+    {
+        <div class="comparison-grid">
+        @foreach (var home in Homes)
+        {
+            <div class="source-comparison-item" @key="home.SourceUrl"><MarketCard Home="home" Changed="Refresh" /></div>
+        }
+        </div>
+    }
+</section>
+@code {
+    List<MarketReference> Homes => MarketReferences.All.Where(x => Shortlist.Selected.Contains(x.SourceUrl)).ToList();
+    void Refresh() => StateHasChanged();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Shortlist.LoadAsync();
+        StateHasChanged();
+    }
+}
