@@ -30,14 +30,17 @@ These screenshots show the earlier layout, before real rental cards were integra
 
 ## Run locally
 
-Install .NET SDK 10. C# Dev Kit is recommended for VS Code. From the repository root:
+Install Git and .NET SDK 10. C# Dev Kit is recommended for VS Code. To download and run the project:
 
 ```sh
+git clone https://github.com/Nkdr21/final-project.git
+cd final-project
 dotnet restore
 dotnet run --project src/Dwellio.Web --launch-profile http
 ```
 
-Open [http://localhost:5180/catalog](http://localhost:5180/catalog). Stop with `Ctrl+C`.
+Open [http://localhost:5180/catalog](http://localhost:5180/catalog) after the terminal reports that the server is listening. Stop with `Ctrl+C`.
+This is a local address, not a hosted demo: each reviewer must run the app on their own computer. If the repository is already downloaded, run the last two commands from its root folder.
 VS Code also provides **Terminal → Run Task → Dwellio: run**.
 Local SQLite databases are created under `src/Dwellio.Web/App_Data/` and excluded from Git.
 
@@ -55,7 +58,7 @@ dotnet test --collect:"XPlat Code Coverage"
 ```
 
 Last completed check on 2026-11-15: 41 tests passed, none failed or skipped; build completed with zero errors and warnings. Photo/catalog HTTP checks and remaining visual checks are recorded in [testing notes](docs/testing.md).
-[GitHub Actions](https://github.com/Nkdr21/final-project/actions/runs/43692107930) passed on Windows, Linux and macOS for commit `b0c1a63`; this local cleanup still needs its own CI run after push.
+The cleanup commit `a839084` is checked by [this GitHub Actions run](https://github.com/Nkdr21/final-project/actions/runs/43693225603). Check its Windows, Linux and macOS jobs for the recorded results; [all workflow runs](https://github.com/Nkdr21/final-project/actions) show checks for later commits.
 With the app running, `python3 scripts/http_smoke.py` checks public HTTP pages and authorization redirects. It does not replace browser E2E tests.
 
 ## Project structure
