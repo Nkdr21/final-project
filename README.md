@@ -128,4 +128,3 @@ See [architecture](docs/architecture.md), [how results are calculated](docs/reco
 - [Testing](docs/testing.md)
 - [Grading evidence and lecture mapping](docs/grading-checklist.md)
 - [Team plan](docs/team-plan.md)
-- [Defence guide](docs/defense.md)
