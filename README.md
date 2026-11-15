@@ -1,3 +1,8 @@
+# Introduction to Functional programming
+# IT-2502
+# Group members:Anuarbek Nurkadyr, Daulet Ulgaisyn
+
+
 # Dwellio
 
 Dwellio is a student housing web application for Astana that explores rent, everyday amenities and travel preferences. It uses C#/.NET 10, Blazor Web App, Entity Framework Core and SQLite. The coursework focuses on records, pure functions, LINQ, pattern matching and testing C# business logic.
@@ -32,7 +37,7 @@ dotnet restore
 dotnet run --project src/Dwellio.Web --launch-profile http
 ```
 
-Open [[http://localhost:5180](http://localhost:5180).](http://localhost:5184/catalog) Stop with `Ctrl+C`.
+Open http://localhost:5184/catalog Stop with `Ctrl+C`.
 VS Code also provides **Terminal → Run Task → Dwellio: run**.
 Local SQLite databases are created under `src/Dwellio.Web/App_Data/` and excluded from Git.
 
