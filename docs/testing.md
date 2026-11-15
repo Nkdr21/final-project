@@ -56,3 +56,7 @@ The HTTP smoke script verifies server rendering and redirect protection; it cann
 - Fixed a Razor string-parameter binding discovered by the HTTP check before delivery. Build: zero warnings/errors; tests: 41/41 passed. Final HTTP smoke: 11 routes and 3 redirects passed on port 5184.
 - README, architecture, data sources and team plan are in English. Existing screenshots are outdated and explicitly labeled in README.
 - Browser automation was unavailable; photo rendering, image-error interaction and responsive layout still require a browser check.
+
+## Repository cleanup — 2026-11-15
+
+Removed 42 unused Bootstrap distribution variants and the unused hero illustration; retained bootstrap.min.css and its source map. Removed 50 unused old-layout CSS selectors while retaining the preference action styles. No C# logic changed. Build completed with zero warnings/errors; all 41 tests passed. Visual regression testing was not performed for this cleanup. README launch URL now matches the configured HTTP profile (port 5180).

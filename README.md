@@ -37,7 +37,7 @@ dotnet restore
 dotnet run --project src/Dwellio.Web --launch-profile http
 ```
 
-Open http://localhost:5184/catalog Stop with `Ctrl+C`.
+Open [http://localhost:5180/catalog](http://localhost:5180/catalog). Stop with `Ctrl+C`.
 VS Code also provides **Terminal → Run Task → Dwellio: run**.
 Local SQLite databases are created under `src/Dwellio.Web/App_Data/` and excluded from Git.
 
@@ -55,7 +55,7 @@ dotnet test --collect:"XPlat Code Coverage"
 ```
 
 Last completed check on 2026-11-15: 41 tests passed, none failed or skipped; build completed with zero errors and warnings. Photo/catalog HTTP checks and remaining visual checks are recorded in [testing notes](docs/testing.md).
-An earlier [GitHub Actions run](https://github.com/Nkdr21/final-project/actions/runs/43634904148) passed on Windows, Linux and macOS; it does not verify subsequent unpushed changes.
+[GitHub Actions](https://github.com/Nkdr21/final-project/actions/runs/43692107930) passed on Windows, Linux and macOS for commit `b0c1a63`; this local cleanup still needs its own CI run after push.
 With the app running, `python3 scripts/http_smoke.py` checks public HTTP pages and authorization redirects. It does not replace browser E2E tests.
 
 ## Project structure

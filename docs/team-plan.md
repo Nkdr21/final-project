@@ -1,6 +1,6 @@
 # Team responsibilities
 
-Participants: `Nkdr21` and `Surrare`. Full names have not been supplied.
+Participants: Anuarbek Nurkadyr and Daulet Ulgaisyn (group IT-2502), as listed in README. Repository accounts: `Nkdr21` and `Surrare`.
 This is a responsibility plan, not proof that each task has been completed.
 Actual contributions are evidenced by changes, commits and Pull Requests.
 
