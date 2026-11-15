@@ -1,7 +1,0 @@
-@page "/market"
-@inject NavigationManager Navigation
-<PageTitle>Apartments in Astana — Dwellio</PageTitle>
-<p><a href="/catalog">Continue to the apartment catalog</a></p>
-@code {
-    protected override void OnInitialized() => Navigation.NavigateTo("/catalog", replace: true);
-}
