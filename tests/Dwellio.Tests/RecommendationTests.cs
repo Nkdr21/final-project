@@ -81,6 +81,10 @@ public class RecommendationTests
     [InlineData(-1)]
     [InlineData(24)]
     public void Invalid_hours_are_rejected(int hour) => Assert.False(RecommendationEngine.Validate(new(ArrivalHour: hour)).Success);
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(0)]
+    public void Non_positive_budget_is_rejected(int budget) => Assert.False(RecommendationEngine.Validate(new(Budget: budget)).Success);
     [Fact] public void Negative_cost_is_rejected() => Assert.False(RecommendationEngine.Validate(new(GymCost: -10)).Success);
     [Fact]
     public void Comparison_limit_and_removal_work()

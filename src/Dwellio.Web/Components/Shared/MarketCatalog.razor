@@ -7,14 +7,18 @@
     <p class="data-note">Sources reviewed on @MarketReferences.ReviewedOn.ToString("dd.MM.yyyy"). Search snapshots may be older. Prices and availability must be confirmed on the original listing; these are not live offers from Dwellio.</p>
     <div class="catalog-toolbar">
         <label>Complex or address<input @bind="query" @bind:event="oninput" placeholder="Search real complexes" /></label>
-        <label>Maximum monthly rent, KZT<input type="number" min="0" step="10000" @bind="budget" /></label>
+        <label>Maximum monthly rent, KZT<input type="number" min="1" step="10000" @bind="budget" @bind:event="oninput" aria-invalid="@(budget <= 0 ? "true" : "false")" aria-describedby="rent-validation" /></label>
         <label>Sort by<select @bind="sort"><option value="price">Lowest rent</option><option value="area">Largest area</option></select></label>
     </div>
+    @if (budget <= 0)
+    {
+        <p id="rent-validation" role="alert">Enter a monthly rent budget greater than zero.</p>
+    }
     <label class="check"><input type="checkbox" @bind="mangilikOnly" />Along Mangilik El avenue</label>
     <p class="results-info" role="status">@Filtered.Count sourced examples</p>
     @if (Filtered.Count == 0)
     {
-        <div class="empty"><h2>No examples within these filters</h2><p>This is a small research sample, not the whole Astana rental market.</p></div>
+        <div class="empty"><h2>No examples within these filters</h2><p>Try a higher budget, another complex name or turn off the avenue filter. This is a small research sample, not the whole Astana rental market.</p></div>
     }
     <div class="cards">
         @foreach (var home in Filtered)

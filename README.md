@@ -9,7 +9,7 @@ Dwellio is a student housing web application for Astana that explores rent, ever
 
 ## Screenshots
 
-These screenshots show the earlier layout, before real rental cards were integrated into the catalog. Updated screenshots of the current catalog are not yet captured. Chrome sizes: desktop 1440×1000 and mobile 390×844 (viewport emulation, not a physical phone).
+Current interface captured on 2026-11-15 in Chrome at desktop 1440×1000 and mobile 390×844 viewports (full-page images). The catalog shows sourced rental photos; apartment details and comparison show labelled demo data. Mobile is emulation, not a physical-device test.
 
 | Screen | Desktop | Mobile |
 |---|---|---|
@@ -57,9 +57,9 @@ dotnet test
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
-Last completed check on 2026-11-15: 41 tests passed, none failed or skipped; build completed with zero errors and warnings. Photo/catalog HTTP checks and remaining visual checks are recorded in [testing notes](docs/testing.md).
+Last completed check on 2026-11-15: 46 tests passed, none failed or skipped; build completed with zero errors and warnings. Photo/catalog HTTP checks and remaining visual checks are recorded in [testing notes](docs/testing.md).
 The cleanup commit `a839084` is checked by [this GitHub Actions run](https://github.com/Nkdr21/final-project/actions/runs/43693225603). Check its Windows, Linux and macOS jobs for the recorded results; [all workflow runs](https://github.com/Nkdr21/final-project/actions) show checks for later commits.
-With the app running, `python3 scripts/http_smoke.py` checks public HTTP pages and authorization redirects. It does not replace browser E2E tests.
+With the app running, `python3 scripts/http_smoke.py` checks public HTTP pages and authorization redirects. For the optional Chrome browser suite, install Node.js 22.19+ and Google Chrome, run `npm ci --prefix scripts`, then `node scripts/browser-audit.mjs`. See [testing](docs/testing.md) for scope and results.
 
 ## Project structure
 
@@ -70,7 +70,7 @@ With the app running, `python3 scripts/http_smoke.py` checks public HTTP pages a
 | `tests/Dwellio.Tests/` | Unit tests and SQLite integration tests |
 | `docs/` | Architecture, data, grading evidence, testing and team plan |
 | `docs/screenshots/` | Application screenshots |
-| `scripts/` | HTTP smoke checks |
+| `scripts/` | HTTP and optional Chrome browser checks |
 | `.github/workflows/` | Automated builds and tests |
 | `.vscode/` | Run tasks and extension recommendations |
 | `Dwellio.slnx`, `global.json` | Solution projects and SDK selection |
@@ -100,7 +100,7 @@ See [data sources](docs/data-sources.md) for provenance and limitations.
 
 - Email confirmation is disabled and email delivery is not configured.
 - Server deployment is not verified; GitHub Pages does not run Blazor Server and SQLite.
-- No repeatable browser E2E suite or completed accessibility/cross-browser audit exists.
+- A limited Chrome browser suite exists. Signed-in browser flows, physical phones and full accessibility/cross-browser checks remain unverified.
 - Comparison persists through reload in the same tab using `sessionStorage`; it is not synchronized across devices. Blocked storage limits persistence to the current circuit.
 - Live routing, bus occupancy and rental availability are not verified. Reviewer residency is not verified.
 - Demo catalog computation is in memory with a 500-record cap; load performance is not measured.

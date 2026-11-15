@@ -15,6 +15,6 @@
  protected override async Task OnInitializedAsync() { if(!Search.Loaded) Search.Update(await Housing.LoadPreferences() ?? new()); var p=Search.Preferences; budget=p.Budget;rooms=p.MinRooms;walk=p.WalkLimit;arrival=p.ArrivalHour;back=p.ReturnHour;travel=p.MaxTravelMinutes;transfers=p.MaxTransfers;priceWeight=p.PriceWeight;lifeWeight=p.LifestyleWeight;travelWeight=p.TravelWeight;furnished=p.FurnishedOnly;destination=p.Destination;priority=p.Priority;transportCost=p.TransportCost;gymCost=p.GymCost;wanted=p.Wanted.ToHashSet();required=p.Required.ToHashSet(); }
  void Toggle(HashSet<string> set,string key,ChangeEventArgs e) { if(e.Value is true) set.Add(key); else set.Remove(key); }
  Preferences Read() => new(budget,rooms,furnished,destination,arrival,back,travel,transfers,walk,priceWeight,lifeWeight,travelWeight,priority,string.Join(',',wanted.Union(required)),string.Join(',',required),transportCost,gymCost);
- void Apply() { var p=Read(); var result=RecommendationEngine.Validate(p); if(!result.Success){message=result.Message;return;} Search.Update(p);Nav.NavigateTo("/catalog"); }
+ void Apply() { var p=Read(); var result=RecommendationEngine.Validate(p); if(!result.Success){message=result.Message;return;} Search.Update(p);Nav.NavigateTo("/catalog?demo=true"); }
  async Task Save() { var p=Read(); var valid=RecommendationEngine.Validate(p); if(!valid.Success){message=valid.Message;return;} Search.Update(p);message=(await Housing.SavePreferences(p)).Message; }
 }

@@ -105,6 +105,7 @@ public class HousingService(IDbContextFactory<HousingDbContext> factory, Authent
     public async Task<OperationResult> SaveReview(ReviewEntity input)
     {
         var id = await UserId(); if (id is null) return OperationResult.Fail("Sign in to write a review.");
+        input.Text = (input.Text ?? "").Trim();
         var errors = new List<ValidationResult>();
         if (!Validator.TryValidateObject(input, new ValidationContext(input), errors, true)) return OperationResult.Fail("Text must be 10–1000 characters; ratings must be 1–5.");
         await using var db = await factory.CreateDbContextAsync();

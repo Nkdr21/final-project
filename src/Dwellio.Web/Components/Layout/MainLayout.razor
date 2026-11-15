@@ -1,7 +1,7 @@
 @inherits LayoutComponentBase
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
-    <a class="brand" href="/" aria-label="Dwellio home"><span class="brand-icon">d.</span>dwellio<span class="brand-dot">.</span></a>
+    <a class="brand" href="/" title="Dwellio home"><span class="brand-icon" aria-hidden="true">d.</span>dwellio<span class="brand-dot" aria-hidden="true">.</span></a>
     <nav aria-label="Main navigation">
         <NavLink href="/catalog">Find a home</NavLink><NavLink href="/complexes">Neighbourhoods</NavLink><NavLink href="/preferences">My lifestyle</NavLink><NavLink href="/compare">Compare</NavLink>
     </nav>
@@ -11,6 +11,6 @@
         <form action="Account/Logout" method="post"><AntiforgeryToken /><input type="hidden" name="ReturnUrl" value="/" /><button class="link-button" type="submit">Sign out</button></form>
     </Authorized><NotAuthorized><a class="button small secondary" href="/Account/Login">Sign in ↗</a></NotAuthorized></AuthorizeView></div>
 </header>
-<main id="main-content">@Body</main>
+<main id="main-content" tabindex="-1">@Body</main>
 <footer class="site-footer"><a class="brand" href="/">dwellio.</a><span>Housing, costs and everyday essentials.</span><span>Astana · student project · 2026</span><a href="/about">About our data</a></footer>
 <div id="blazor-error-ui" role="alert">Connection interrupted. <a href="" class="reload">Reload</a><a class="dismiss">×</a></div>

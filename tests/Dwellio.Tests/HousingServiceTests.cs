@@ -100,6 +100,17 @@ public class HousingServiceTests : IAsyncLifetime
         Assert.False((await service.SaveReview(new() { ComplexId = 1, Text = "A detailed review of the place.", Cleanliness = rating })).Success);
         Assert.Empty(await service.Reviews(1));
     }
+    [Theory]
+    [InlineData("short")]
+    [InlineData("           ")]
+    [InlineData("     short     ")]
+    public async Task Short_review_after_trimming_is_not_saved(string text)
+    {
+        auth.SignIn("student", "Student");
+        Assert.False((await service.SaveReview(new() { ComplexId = 1, Text = text })).Success);
+        Assert.Empty(await service.Reviews(1));
+    }
+
     private class TestFactory(DbContextOptions<HousingDbContext> options) : IDbContextFactory<HousingDbContext>
     {
         public HousingDbContext CreateDbContext() => new(options);

@@ -10,14 +10,14 @@ The supplied final rubric has 20 criteria at 5% each. This checklist records imp
 | State management | Scoped SearchState; persisted profiles/favourites | Comparison restored from tab sessionStorage after reload; not synced across devices |
 | UI design | Housing-oriented English UI, compact navigation and original illustrations | Home, catalog, comparison and detail captured in desktop/mobile Chrome; broader QA outstanding |
 | UX | Empty/error states; explanations; reversible actions | Complete hands-on user testing |
-| Responsiveness | CSS breakpoints for desktop/tablet/mobile | Actual device/browser checks outstanding |
-| Core functionality | Catalog, preferences, detail, compare, auth, owner CRUD, reviews | Interactive browser flows need verification |
+| Responsiveness | CSS breakpoints for desktop/tablet/mobile | 390 px Chrome emulation checked; physical devices and other browsers unverified |
+| Core functionality | Catalog, preferences, detail, compare, auth, owner CRUD, reviews | Public Chrome flows verified; signed-in flows remain unverified |
 | Advanced features | Role authorization; personalized scoring; uploads | Live routing not integrated |
 | Error handling | Typed route outcomes, validation and unknown labels | More failure/load testing needed |
 | Efficiency | Batched catalog fetch, lazy images, no repeated route fetch per listing in catalog | No performance benchmark yet |
 | Scalability | Services/contracts and DB indexes | SQLite/small dataset; no load-tested scalability claim |
 | Resource utilization | Short-lived contexts, render batches | Catalog capped at 500; production pagination needed |
-| Automated testing | Core unit tests and real SQLite integration tests | Browser E2E suite not yet implemented |
+| Automated testing | Core unit tests and real SQLite integration tests | 10 grouped Chrome checks passed; signed-in browser flows remain unverified |
 | Quality assurance | Build/tests/HTTP smoke checks | Cross-browser and mobile QA not completed |
 | Documentation | README, architecture, data model, sources and tests | Keep updated after friend changes |
 | Innovation | Lifestyle plus two-direction commute comparison | Demonstrate priority changes clearly |
