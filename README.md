@@ -32,7 +32,7 @@ dotnet restore
 dotnet run --project src/Dwellio.Web --launch-profile http
 ```
 
-Open [http://localhost:5180](http://localhost:5180). Stop with `Ctrl+C`.
+Open [[http://localhost:5180](http://localhost:5180).](http://localhost:5184/catalog) Stop with `Ctrl+C`.
 VS Code also provides **Terminal → Run Task → Dwellio: run**.
 Local SQLite databases are created under `src/Dwellio.Web/App_Data/` and excluded from Git.
 
