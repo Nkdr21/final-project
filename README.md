@@ -128,6 +128,7 @@ See [architecture](docs/architecture.md), [how results are calculated](docs/reco
 - [Data sources](docs/data-sources.md)
 - [How results are calculated](docs/recommendations.md)
 - [Presentation material](docs/presentation.md)
+- [Presentation slides](docs/Dwellio-presentation.pptx) (19 slides with speaker notes)
 - [Testing](docs/testing.md)
 - [Grading evidence and lecture mapping](docs/grading-checklist.md)
 - [Team plan](docs/team-plan.md)
