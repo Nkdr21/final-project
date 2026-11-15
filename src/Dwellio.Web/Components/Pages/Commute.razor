@@ -1,0 +1,156 @@
+@page "/commute"
+@inject TransitService Transit
+
+<PageTitle>Commute & seat planner — Dwellio</PageTitle>
+
+<div class="shell page">
+    <span class="eyebrow">Commute &amp; seat planner</span>
+    <h1>Get there — and get a seat</h1>
+    <p class="lead">Pick where you start and where you go. Dwellio compares the nearest stop, walking back to an earlier stop and leaving earlier, using real bus GPS data.</p>
+
+    <div class="plan-layout section">
+        <section class="panel stack" aria-label="Trip">
+            <div class="field">From
+                @if (from is not null)
+                {
+                    <div class="chosen-place"><span aria-hidden="true">🟢</span><span>@from.Name @if (from.Detail is not null) { <small>· @from.Detail</small> }</span></div>
+                }
+                <PlaceSearch Label="Starting point" Placeholder="Home, complex, bus stop or address" OnSelected="s => SetFrom(s.ToPoint())" />
+            </div>
+            <div class="field">To
+                <div class="chosen-place"><span aria-hidden="true">🎯</span><span>@Plan.DestinationName</span></div>
+                <PlaceSearch Label="Destination" Placeholder="Change destination" OnSelected="SetTo" />
+            </div>
+            <div class="form-grid">
+                <label class="field">Arrive by
+                    <select value="@Plan.ArriveByHour" @onchange="@(e => State.Update(p => p with { ArriveByHour = int.TryParse(e.Value?.ToString(), out var h) ? h : p.ArriveByHour }))">
+                        @for (var h = 7; h <= 22; h++) { <option value="@h">@Labels.Hour(h)</option> }
+                    </select>
+                </label>
+                <label class="field">Walk to a stop up to
+                    <select value="@walk" @onchange="SetWalk">
+                        @foreach (var w in new[] { 5, 8, 10, 12, 15, 20 }) { <option value="@w">@w min</option> }
+                    </select>
+                </label>
+            </div>
+            <div class="field">I prefer
+                <Segmented TValue="CommutePriority" Label="Commute priority" Value="Plan.Priority" ValueChanged="@(v => State.Update(p => p with { Priority = v }))"
+                           Options="@([(CommutePriority.Seat, "💺 A seat"), (CommutePriority.Balanced, "⚖️ Balanced"), (CommutePriority.Fastest, "⚡ Fastest")])" />
+            </div>
+            <p class="note" style="margin:0">Open GPS timetables exist for buses @string.Join(", ", Transit.RouteRefs). Other trips get an estimate between real OpenStreetMap stops.</p>
+        </section>
+
+        <section aria-live="polite">
+            <LiveMap Center="Plan.Destination" Zoom="13" Data="mapData" Tall Label="Map of the trip" Clickable OnMapClick="MapClicked">
+                <Caption><span class="tag">Tap the map to set a starting point</span></Caption>
+            </LiveMap>
+            <div class="section" style="margin-top:18px">
+                @if (from is null)
+                {
+                    <EmptyState Emoji="🚏" Title="Where do you start?">
+                        <p class="muted">Search a place or tap the map. Try “Comfort Town” or “Nova City” — they are on bus 46.</p>
+                        <div class="inline" style="justify-content:center">
+                            @foreach (var demo in Demos) { <button class="button small soft" @onclick="() => SetFrom(demo)">@demo.Name</button> }
+                        </div>
+                    </EmptyState>
+                }
+                else if (plan is not null)
+                {
+                    <JourneyOptions Plan="plan" Destination="@Plan.DestinationName" Priority="Plan.Priority" />
+                }
+            </div>
+        </section>
+    </div>
+
+    <section class="section panel stack" aria-labelledby="explorer">
+        <h2 id="explorer" style="margin:0">Route load explorer</h2>
+        <p class="muted" style="margin:0">See how full each bus with open data gets along its route at different times of day — this is what the seat estimate is based on.</p>
+        <div class="inline">
+            <label class="field">Route
+                <select @bind="explorerRoute">
+                    @foreach (var r in Transit.Network.Routes) { <option value="@r.Key">@r.Label</option> }
+                </select>
+            </label>
+            <label class="field" style="flex:1;min-width:220px">
+                <span class="spread"><span>Time of day</span><span class="tag info">@Labels.Hour(explorerHour)</span></span>
+                <input type="range" min="6" max="22" @bind="explorerHour" @bind:event="oninput" aria-label="Hour of day" />
+            </label>
+        </div>
+        @if (Transit.Network.Find(explorerRoute) is { } route)
+        {
+            <LoadChart Profile="Transit.Profile(route, explorerHour)" Route="@route.Ref" Hour="explorerHour" />
+        }
+    </section>
+</div>
+
+@code {
+    [CascadingParameter] public PlannerState State { get; set; } = default!;
+    [CascadingParameter] public Preferences Plan { get; set; } = default!;
+    [SupplyParameterFromQuery] public string? FromLat { get; set; }
+    [SupplyParameterFromQuery] public string? FromLon { get; set; }
+    [SupplyParameterFromQuery(Name = "from")] public string? FromName { get; set; }
+
+    private static readonly NamedPoint[] Demos =
+    [
+        new("Comfort Town", new(51.08910, 71.44703), "Yesil district"),
+        new("Nova City", new(51.08941, 71.45204), "Yesil district"),
+        new("Khan Shatyr", new(51.13250, 71.40386), "Turan Avenue 37"),
+    ];
+
+    private NamedPoint? from;
+    private CommutePlan? plan;
+    private int walk = 10, explorerHour = 8;
+    private string explorerRoute = "46-1", computedKey = "";
+    private MapData mapData = MapData.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (from is null && Query.Point(FromLat, FromLon) is { } start)
+            from = new(FromName ?? "Selected point", start);
+        await ComputeAsync();
+    }
+
+    private async Task SetTo(Suggestion s) =>
+        await State.Update(p => p with { DestinationName = s.Name, DestinationLat = s.Location.Lat, DestinationLon = s.Location.Lon });
+
+    private Task SetFrom(NamedPoint point)
+    {
+        from = point;
+        return ComputeAsync();
+    }
+
+    private Task MapClicked(GeoPoint point) => SetFrom(new NamedPoint("Point on the map", point));
+
+    private Task SetWalk(ChangeEventArgs e)
+    {
+        walk = int.TryParse(e.Value?.ToString(), out var w) ? w : walk;
+        return ComputeAsync();
+    }
+
+    private async Task ComputeAsync()
+    {
+        var key = $"{Plan.CacheKey}|{from?.Location}|{walk}";
+        if (key == computedKey) return;
+        computedKey = key;
+        var markers = new List<MapMarker> { new(Plan.DestinationLat, Plan.DestinationLon, "destination", Plan.DestinationName, Emphasis: true) };
+        if (from is null) { plan = null; mapData = new(markers); return; }
+        var request = new JourneyRequest(from.Location, Plan.Destination, Plan.ArriveByHour, walk, Plan.Priority);
+        plan = await Transit.PlanAsync(request);
+        markers.Add(new(from.Location.Lat, from.Location.Lon, "home", from.Name, "Start", Emphasis: true));
+        IReadOnlyList<double[]>? line = null;
+        switch (plan)
+        {
+            case TransitPlan t:
+                var best = t.Best;
+                markers.Add(new(best.Board.Location.Lat, best.Board.Location.Lon, "board", best.Board.Name, $"Board bus {best.Route.Ref} · seat {Labels.Percent(best.SeatChance)}"));
+                markers.Add(new(best.Alight.Location.Lat, best.Alight.Location.Lon, "alight", best.Alight.Name, "Get off here"));
+                line = best.Route.Stops.Skip(best.BoardIndex).Take(best.Stops + 1).Select(s => new[] { s.Location.Lat, s.Location.Lon }).ToList();
+                break;
+            case EstimatedBusPlan e:
+                markers.Add(new(e.FromStop.Location.Lat, e.FromStop.Location.Lon, "board", e.FromStop.DisplayName, "Nearest stop"));
+                markers.Add(new(e.ToStop.Location.Lat, e.ToStop.Location.Lon, "alight", e.ToStop.DisplayName, "Stop near destination"));
+                break;
+        }
+        mapData = new(markers, Line: line);
+    }
+}

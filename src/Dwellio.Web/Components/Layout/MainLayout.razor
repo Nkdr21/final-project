@@ -1,16 +1,79 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject PlannerState State
+
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
-    <a class="brand" href="/" title="Dwellio home"><span class="brand-icon" aria-hidden="true">d.</span>dwellio<span class="brand-dot" aria-hidden="true">.</span></a>
-    <nav aria-label="Main navigation">
-        <NavLink href="/catalog">Find a home</NavLink><NavLink href="/complexes">Neighbourhoods</NavLink><NavLink href="/preferences">My lifestyle</NavLink><NavLink href="/compare">Compare</NavLink>
+    <a class="brand" href="/" aria-label="Dwellio home"><span class="brand-mark" aria-hidden="true">d</span>dwellio</a>
+    <nav class="top-nav" aria-label="Main">
+        <NavLink href="/plan">🧭 Plan my move</NavLink>
+        <NavLink href="/commute">🚌 Commute</NavLink>
+        <NavLink href="/compare">⚖️ Compare @if (State.CompareIds.Length > 0) { <span class="count">@State.CompareIds.Length</span> }</NavLink>
+        <NavLink href="/about">ℹ️ How it works</NavLink>
     </nav>
-    <div class="account-nav"><AuthorizeView><Authorized>
-        <a href="/favorites" title="Saved homes">♡ Saved homes</a><a href="/owner">Dashboard</a>
-        <AuthorizeView Roles="Admin" Context="adminContext"><a href="/admin">Moderation</a></AuthorizeView>
-        <form action="Account/Logout" method="post"><AntiforgeryToken /><input type="hidden" name="ReturnUrl" value="/" /><button class="link-button" type="submit">Sign out</button></form>
-    </Authorized><NotAuthorized><a class="button small secondary" href="/Account/Login">Sign in ↗</a></NotAuthorized></AuthorizeView></div>
+    <div class="account-nav">
+        <AuthorizeView>
+            <Authorized>
+                <a href="/favorites" title="Saved homes">♡ <span class="sr-only">Saved homes</span></a>
+                <AuthorizeView Roles="Owner,Admin" Context="ownerContext"><a href="/owner">My listings</a></AuthorizeView>
+                <AuthorizeView Roles="Admin" Context="adminContext"><a href="/admin">Moderation</a></AuthorizeView>
+                <form action="Account/Logout" method="post"><AntiforgeryToken /><input type="hidden" name="ReturnUrl" value="/" /><button class="link-button" type="submit">Sign out</button></form>
+            </Authorized>
+            <NotAuthorized><a class="button small ghost" href="/Account/Login">Sign in</a></NotAuthorized>
+        </AuthorizeView>
+    </div>
 </header>
-<main id="main-content" tabindex="-1">@Body</main>
-<footer class="site-footer"><a class="brand" href="/">dwellio.</a><span>Housing, costs and everyday essentials.</span><span>Astana · student project · 2026</span><a href="/about">About our data</a></footer>
-<div id="blazor-error-ui" role="alert">Connection interrupted. <a href="" class="reload">Reload</a><a class="dismiss">×</a></div>
+
+<main id="main-content" tabindex="-1">
+    <PlannerScope>
+        <ErrorBoundary @ref="boundary">
+            <ChildContent>@Body</ChildContent>
+            <ErrorContent Context="error">
+                <div class="shell page narrow">
+                    <div class="empty">
+                        <span class="emoji" aria-hidden="true">🛠️</span>
+                        <h1>This page hit a problem</h1>
+                        <p class="muted">Your plan is safe. Try again, or go back to the planner.</p>
+                        <div class="inline" style="justify-content:center">
+                            <button class="button" @onclick="Recover">Try again</button>
+                            <a class="button ghost" href="/plan">Open planner</a>
+                        </div>
+                    </div>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
+    </PlannerScope>
+</main>
+
+<footer class="site-footer">
+    <div class="shell">
+        <span class="brand"><span class="brand-mark" aria-hidden="true">d</span>dwellio</span>
+        <span>Plan everyday life in Astana · student project 2026</span>
+        <span>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a></span>
+        <span>Bus data: <a href="https://doi.org/10.5281/zenodo.15769359" target="_blank" rel="noopener">Mansurova et al., CC BY 4.0</a></span>
+        <a href="/about">How it works</a>
+    </div>
+</footer>
+
+<nav class="bottom-nav" aria-label="Main (mobile)">
+    <NavLink href="/" Match="NavLinkMatch.All"><span aria-hidden="true">🏠</span>Home</NavLink>
+    <NavLink href="/plan"><span aria-hidden="true">🧭</span>Plan</NavLink>
+    <NavLink href="/commute"><span aria-hidden="true">🚌</span>Commute</NavLink>
+    <NavLink href="/compare"><span aria-hidden="true">⚖️</span>Compare @if (State.CompareIds.Length > 0) { <span class="count">@State.CompareIds.Length</span> }</NavLink>
+    <NavLink href="/favorites"><span aria-hidden="true">♡</span>Saved</NavLink>
+</nav>
+
+<div id="blazor-error-ui" role="alert">Connection lost. <a href="" class="reload">Reload</a><a class="dismiss" aria-label="Dismiss">×</a></div>
+
+@code {
+    private ErrorBoundary? boundary;
+
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    // Recover the error boundary when the user navigates to another page.
+    protected override void OnParametersSet() => boundary?.Recover();
+
+    private void Recover() => boundary?.Recover();
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+    public void Dispose() => State.Changed -= OnChanged;
+}

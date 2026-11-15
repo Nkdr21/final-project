@@ -1,13 +1,79 @@
 @page "/compare"
-@inject SearchState Search
-@inject HousingService Housing
-@inject IRouteProvider Routes
-<PageTitle>Compare — Dwellio</PageTitle>
-<div class="shell section"><h1>Compare homes</h1><p>Published rental examples and demo lifestyle calculations are shown separately.</p></div>
-<SourceComparison />
-<details class="shell demo-catalog" open="@(items.Count > 0)"><summary>Demo lifestyle comparison</summary>
-<div class="shell section"><span class="eyebrow">A THOUGHTFUL CHOICE</span><h2>Three places. Your choice.</h2><p class="intro">Compare more than rent. Picture your everyday in each home.</p>@if(items.Count==0){<div class="empty"><h2>Add homes to compare</h2><p>Select + on a listing card. Choose up to three apartments.</p><a class="button" href="/catalog">Explore homes ↗</a></div>}else{<p class="data-note">Journeys and amenities are demo scenarios. Unknown costs are not treated as zero: incomplete totals are labelled.</p><div class="comparison-grid">@foreach(var x in items){<article class="comparison-item"><img src="@x.Listing.Photo" alt="Apartment illustration"/><div class="card-body"><h2><a href="/apartment/@x.Listing.Id">@x.Complex.Name</a></h2><p>@x.Listing.Title</p><dl><dt>Rent</dt><dd>@Labels.Money(x.Listing.Rent)</dd><dt>@(x.Cost.UtilitiesUnknown?"Known part of monthly costs":"Estimated monthly total")</dt><dd>@Labels.Money(x.Cost.KnownTotal) @(x.Cost.UtilitiesUnknown?"+ unknown utilities":"")</dd><dt>Deposit</dt><dd>@Labels.Money(x.Cost.Deposit)</dd><dt>Outbound / return · demo</dt><dd>@(x.Match?.Outbound is null?"No suitable data":$"{x.Match.Outbound.Minutes} / {x.Match.Return?.Minutes} minutes")</dd><dt>Transfers outbound / return</dt><dd>@(x.Match?.Outbound is null?"—":$"{x.Match.Outbound.Transfers} / {x.Match.Return?.Transfers}")</dd><dt>Preference score</dt><dd>@(x.Match is null?"Does not meet requirements":$"{x.Match.Score} / 100")</dd></dl><div class="amenity-tags">@foreach(var a in x.Complex.ToModel().Amenities){<span>@Labels.Category(a.Category) · @a.WalkMinutes min</span>}</div><button class="button secondary full" @onclick="()=>Remove(x.Listing.Id)">Remove from comparison</button></div></article>}</div><a class="text-link" href="/preferences">Adjust priorities and recalculate →</a>}</div>
-</details>
-@code{record Row(ListingEntity Listing,ComplexEntity Complex,MonthlyCost Cost,Match? Match);List<Row> items=[];protected override async Task OnInitializedAsync(){await LoadItems();}
-protected override async Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return;await Search.LoadComparisonAsync();await LoadItems();StateHasChanged();}
-async Task LoadItems(){items.Clear();if(!Search.Loaded)Search.Update(await Housing.LoadPreferences()??new());var complexes=await Housing.Complexes();foreach(var id in Search.CompareIds){var l=await Housing.Listing(id);if(l is null)continue;var c=complexes.First(x=>x.Id==l.ComplexId);var r=await Routes.GetAsync(c.ToModel(),Search.Preferences);items.Add(new(l,c,RecommendationEngine.CalculateCost(l.ToModel(),c.ToModel(),Search.Preferences),RecommendationEngine.Evaluate(l.ToModel(),c.ToModel(),Search.Preferences,r)));}}async Task Remove(int id){await Search.ToggleCompareAsync(id);items.RemoveAll(x=>x.Listing.Id==id);}}
+@inject HomeFinder Finder
+
+<PageTitle>Compare homes — Dwellio</PageTitle>
+
+<div class="shell page">
+    <span class="eyebrow">Side by side</span>
+    <h1>Compare homes</h1>
+    <p class="lead">Rent is only part of it. Compare monthly costs, everyday places and the trip to @Plan.DestinationName.</p>
+    @if (loading)
+    {
+        <div class="compare-grid">@for (var i = 0; i < 2; i++) { <div class="skeleton" style="height:420px"></div> }</div>
+    }
+    else if (rows.IsEmpty)
+    {
+        <EmptyState Emoji="⚖️" Title="Nothing to compare yet">
+            <p class="muted">Tap ⚖️ on up to @PlannerState.MaxCompare homes in the planner.</p>
+            <a class="button" href="/plan">Find homes</a>
+        </EmptyState>
+    }
+    else
+    {
+        <div class="compare-grid section">
+            @foreach (var row in rows)
+            {
+                var cost = HomeMatcher.Cost(row.Listing.ToModel(), Plan);
+                var best = rows.Count(r => r.Match.Eligible) > 1 && row.Match.Eligible && row.Match.Score == rows.Where(r => r.Match.Eligible).Max(r => r.Match.Score);
+                <article class="panel stack @(best ? "option best" : "")" @key="row.Listing.Id">
+                    <ListingPhoto Url="@row.Listing.Photo" Alt="@row.Listing.Title"><KindTag Kind="row.Listing.Kind" />@if (row.Match.Eligible) { <ScoreBadge Score="row.Match.Score" /> }</ListingPhoto>
+                    @if (best) { <span class="tag info">Best fit for your plan</span> }
+                    <h2 style="font-size:18px;margin:0"><a href="/homes/@row.Listing.Id">@row.Listing.Title</a></h2>
+                    <dl class="facts">
+                        <dt>Rent</dt><dd>@Labels.Money(row.Listing.Rent)</dd>
+                        <dt>@(cost.UtilitiesUnknown ? "Known monthly costs" : "Monthly total")</dt><dd>@Labels.Money(cost.KnownTotal)@(cost.UtilitiesUnknown ? " + utilities?" : "")</dd>
+                        <dt>Deposit</dt><dd>@(cost.Deposit is { } d ? Labels.Money(d) : "—")</dd>
+                        <dt>Size</dt><dd>@row.Listing.Rooms rooms · @row.Listing.Area m²</dd>
+                        <dt>Commute</dt><dd>@Labels.Minutes(row.Match.Commute.TotalMinutes)</dd>
+                        <dt>Seat chance</dt><dd>@(row.Match.Commute is TransitPlan t ? Labels.Percent(t.Best.SeatChance) : "unknown")</dd>
+                        <dt>Needs on foot</dt><dd>@row.Match.Area.SatisfiedCount / @row.Match.Area.Needs.Length</dd>
+                    </dl>
+                    <div class="tags">
+                        @foreach (var need in row.Match.Area.Needs)
+                        {
+                            <span class="tag @(need.Satisfied(Plan.WalkLimit) ? "good" : "")">@need.Category.Icon @(need.WalkMinutes is { } m ? $"{m}′" : "—")</span>
+                        }
+                    </div>
+                    @if (!row.Match.Eligible) { <ul class="why">@foreach (var x in row.Match.Exclusions) { <li class="no">@x</li> }</ul> }
+                    <button class="button ghost block" @onclick="() => Remove(row.Listing.Id)">Remove</button>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public PlannerState State { get; set; } = default!;
+    [CascadingParameter] public Preferences Plan { get; set; } = default!;
+    private ImmutableArray<HomeResult> rows = [];
+    private bool loading = true;
+    private string key = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var next = $"{Plan.CacheKey}|{string.Join(',', State.CompareIds)}";
+        if (next == key) return;
+        key = next;
+        var results = new List<HomeResult>();
+        foreach (var id in State.CompareIds)
+            if (await Finder.ForListingAsync(id, Plan) is { } r) results.Add(r);
+        rows = [.. results];
+        loading = false;
+    }
+
+    private async Task Remove(int id)
+    {
+        await State.ToggleCompareAsync(id);
+        rows = rows.RemoveAll(r => r.Listing.Id == id);
+    }
+}

@@ -1,0 +1,22 @@
+@* How full the bus is along the route at a given hour, with the user's ride highlighted. *@
+<BarChart TItem="StopLoad" Items="Profile" Value="l => l.OnBoard" Label="l => l.Stop.Name"
+          Highlight="l => l.Index >= From && l.Index <= To" Threshold="Seats" ThresholdLabel="@($"{Seats} seats")"
+          Format="@(v => $"≈{v:0} on board")" LabelHeader="Stop" ValueHeader="Estimated passengers"
+          Title="@($"Estimated passengers on bus {Route} around {Labels.Hour(Hour)}")">
+    <Legend>
+        <span><i style="background:var(--primary)"></i>Your ride, seats free</span>
+        <span><i style="background:var(--bad)"></i>Your ride, people standing</span>
+        <span><i style="background:#c7cbff"></i>Seats free (estimate)</span>
+        <span><i style="background:#f2a7b5"></i>People standing (estimate)</span>
+        <span>Model from GPS dwell times, July–Sept 2024 — not a live count.</span>
+    </Legend>
+</BarChart>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<StopLoad> Profile { get; set; } = [];
+    [Parameter] public int From { get; set; } = -1;
+    [Parameter] public int To { get; set; } = -1;
+    [Parameter] public string Route { get; set; } = "";
+    [Parameter] public int Hour { get; set; }
+    [Parameter] public int Seats { get; set; } = BusAssumptions.Default.Seats;
+}

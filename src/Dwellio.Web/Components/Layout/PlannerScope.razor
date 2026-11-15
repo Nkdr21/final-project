@@ -1,0 +1,40 @@
+@implements IDisposable
+@inject PlannerState State
+
+@* Loads the saved plan once per circuit and cascades it to every page.
+   Pages receive the current Preferences as a cascading parameter and re-render automatically
+   whenever the plan changes anywhere in the app. *@
+<CascadingValue Value="State" IsFixed="true">
+    <CascadingValue Value="State.Preferences">
+        @if (!RendererInfo.IsInteractive)
+        {
+            @* Statically rendered pages (sign-in, registration, account management). *@
+            <div class="shell page narrow account-page">@ChildContent</div>
+        }
+        else if (State.Loaded)
+        {
+            @ChildContent
+        }
+        else
+        {
+            <div class="shell page" aria-busy="true">
+                <div class="skeleton" style="height:42px;width:40%;margin-bottom:16px"></div>
+                <div class="skeleton" style="height:320px"></div>
+            </div>
+        }
+    </CascadingValue>
+</CascadingValue>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await State.EnsureLoadedAsync();
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+    public void Dispose() => State.Changed -= OnChanged;
+}

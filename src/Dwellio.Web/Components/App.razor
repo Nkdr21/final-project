@@ -3,10 +3,13 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="description" content="Plan your life in Astana around where you work or study: everyday places within walking distance, real bus routes and your chance of a seat." />
     <base href="/" />
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
+    <link rel="stylesheet" href="@Assets["lib/leaflet/leaflet.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["Dwellio.Web.styles.css"]" />
     <ImportMap />
@@ -15,9 +18,13 @@
 </head>
 
 <body>
-    <Routes @rendermode="PageRenderMode" />
+    @* Interactive pages are not prerendered: the plan lives in browser storage, so rendering once
+       with the real state avoids a flash of default values and double data loading. *@
+    <div id="app"><Routes @rendermode="PageRenderMode" /></div>
+    <div class="boot" aria-live="polite"><span class="brand"><span class="brand-mark" aria-hidden="true">d</span>dwellio</span><span><span class="spinner" aria-hidden="true"></span> Loading your plan…</span><noscript>Dwellio needs JavaScript enabled.</noscript></div>
     <ReconnectModal />
-    <script src="@Assets["comparison.js"]"></script>
+    <script src="@Assets["lib/leaflet/leaflet.js"]"></script>
+    <script src="@Assets["js/dwellio.js"]"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["Components/Account/Shared/PasskeySubmit.razor.js"]" type="module"></script>
 </body>
@@ -26,5 +33,8 @@
 
 @code {
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
-    private IComponentRenderMode? PageRenderMode => HttpContext.Request.Path.StartsWithSegments("/Account") ? null : InteractiveServer;
+
+    // Account pages use static server rendering (Identity needs HTTP cookies); everything else is interactive.
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.Request.Path.StartsWithSegments("/Account") ? null : new InteractiveServerRenderMode(prerender: false);
 }

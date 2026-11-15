@@ -1,0 +1,4 @@
+<span class="score @(Score >= 70 ? "" : Score >= 45 ? "mid" : "low")" title="Fit for your plan, 0–100">
+    <span>@Score<small>fit</small></span>
+</span>
+@code { [Parameter] public int Score { get; set; } }

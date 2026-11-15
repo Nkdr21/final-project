@@ -1,21 +1,113 @@
 @page "/complex/{Id:int}"
 @inject HousingService Housing
-@inject SearchState Search
-<PageTitle>@(complex?.Name??"Complex") — Dwellio</PageTitle>
-<div class="shell section">@if(complex is null){<h1>Loading, or complex not found</h1>}else{
-<a href="/complexes" class="text-link">← Neighbourhoods</a><h1>@complex.Name</h1><p class="intro">@complex.Description</p><div class="complex-gallery"><figure><img src="/images/lobby.svg" alt="Concept illustration of a bright entrance lobby"/><figcaption>Lobby · illustration</figcaption></figure><figure><img src="/images/courtyard.svg" alt="Concept illustration of a green courtyard"/><figcaption>Courtyard · illustration</figcaption></figure><figure><img src="/images/gym.svg" alt="Concept illustration of a fitness space"/><figcaption>Fitness · illustration</figcaption></figure></div>
-<AmenityGroup Title="Inside the complex" Items="NeighborhoodService.Inside(complex.ToModel())" />
-<AmenityGroup Title="Nearby" Items="NeighborhoodService.Nearby(complex.ToModel())" />
-<p class="data-note">Source: Dwellio educational dataset. Not verified on site. Walking times are example values, not street-network calculations.</p>
-<h2>Apartments in this complex</h2><div class="cards">@foreach(var item in listings){<ApartmentCard Listing="item" Complex="complex" Selected="Search.CompareIds.Contains(item.Id)" OnCompare="Compare"/>}</div><p role="status">@message</p>
-<h2>User reviews <small>(@reviews.Count)</small></h2><p>Residency is not verified. Reviews reflect personal experience, not an independent property inspection.</p>@if(reviews.Count==0){<p class="empty">No reviews yet. No average rating available.</p>}else{<p>Cleanliness: @reviews.Average(x=>x.Cleanliness).ToString("F1") / 5 · Quietness: @reviews.Average(x=>x.Quietness).ToString("F1") / 5 · Shared spaces: @reviews.Average(x=>x.Facilities).ToString("F1") / 5</p>@foreach(var r in reviews){<article class="review"><strong>@r.Author · @r.CreatedUtc.ToString("dd.MM.yyyy")</strong><p>@r.Text</p><small>Cleanliness @r.Cleanliness/5 · Quietness @r.Quietness/5 · Shared spaces @r.Facilities/5</small></article>}}
-<AuthorizeView><Authorized><div class="form-section"><h3>Your review</h3><label>Your experience<textarea maxlength="1000" @bind="review.Text"></textarea></label><div class="form-grid"><label>Cleanliness (1–5)<input type="number" min="1" max="5" @bind="review.Cleanliness"/></label><label>Quietness (1–5)<input type="number" min="1" max="5" @bind="review.Quietness"/></label><label>Shared spaces (1–5)<input type="number" min="1" max="5" @bind="review.Facilities"/></label></div><button class="button" @onclick="SaveReview">Save review</button><p role="status">@reviewMessage</p></div></Authorized><NotAuthorized><a href="/Account/Login" class="button secondary">Sign in to review</a></NotAuthorized></AuthorizeView>
-}</div>
-@code{
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+@inject HomeFinder Finder
+
+<PageTitle>@(complex?.Name ?? "Complex") — Dwellio</PageTitle>
+
+<div class="shell page">
+    <a href="/plan">← Back to my plan</a>
+    @if (loaded && complex is null)
     {
-        if (!firstRender) return;
-        await Search.LoadComparisonAsync();
-        StateHasChanged();
+        <EmptyState Emoji="🏢" Title="Complex not found"><a class="button" href="/plan">Open planner</a></EmptyState>
     }
-[Parameter]public int Id{get;set;}ComplexEntity? complex;List<ListingEntity> listings=[];List<ReviewEntity> reviews=[];ReviewEntity review=new();string message="",reviewMessage="";protected override async Task OnParametersSetAsync(){complex=(await Housing.Complexes()).FirstOrDefault(x=>x.Id==Id);listings=(await Housing.Listings()).Where(x=>x.ComplexId==Id).ToList();reviews=await Housing.Reviews(Id);review=new(){ComplexId=Id};}async Task Compare(int id)=>message=(await Search.ToggleCompareAsync(id)).Message;async Task SaveReview(){reviewMessage=(await Housing.SaveReview(review)).Message;reviews=await Housing.Reviews(Id);}}
+    else if (complex is not null && report is not null)
+    {
+        <span class="eyebrow" style="margin-top:14px">Residential complex</span>
+        <h1>@complex.Name</h1>
+        <p class="lead">@complex.Description</p>
+        <p class="muted">@complex.Address · <a href="@($"https://www.openstreetmap.org/?mlat={F(complex.Latitude)}&mlon={F(complex.Longitude)}#map=17/{F(complex.Latitude)}/{F(complex.Longitude)}")" target="_blank" rel="noopener">Open in OpenStreetMap ↗</a></p>
+
+        <div class="grid-2 section">
+            <div><h2>Within @Plan.WalkLimit min</h2><NeedReport Report="report" /></div>
+            <LiveMap Center="complex.ToModel().Location" Zoom="15" Data="mapData" Label="Map around the complex" />
+        </div>
+
+        <section class="section">
+            <h2>Homes here</h2>
+            @if (homes.IsEmpty) { <p class="muted">No active listings in this complex right now.</p> }
+            <div class="grid-3">@foreach (var h in homes) { <HomeCard @key="h.Listing.Id" Result="h" Selected="State.CompareIds.Contains(h.Listing.Id)" OnCompare="Compare" /> }</div>
+            <p role="status" class="status">@message</p>
+        </section>
+
+        <section class="section">
+            <h2>Resident reviews <small class="muted">(@reviews.Count)</small></h2>
+            <p class="note">Residency is not verified. Reviews are personal opinions, not an inspection.</p>
+            @if (reviews.Count == 0) { <p class="muted">No reviews yet.</p> }
+            else
+            {
+                <div class="tags" style="margin-bottom:8px">
+                    <span class="tag">🧹 Cleanliness @reviews.Average(r => r.Cleanliness).ToString("0.0")/5</span>
+                    <span class="tag">🤫 Quietness @reviews.Average(r => r.Quietness).ToString("0.0")/5</span>
+                    <span class="tag">🏋️ Shared spaces @reviews.Average(r => r.Facilities).ToString("0.0")/5</span>
+                </div>
+                @foreach (var r in reviews)
+                {
+                    <article class="review"><strong>@r.Author</strong> <small>· @r.CreatedUtc.ToString("dd.MM.yyyy")</small><p style="margin:4px 0">@r.Text</p><small>Cleanliness @r.Cleanliness/5 · Quietness @r.Quietness/5 · Shared spaces @r.Facilities/5</small></article>
+                }
+            }
+            <AuthorizeView>
+                <Authorized>
+                    <div class="panel stack section">
+                        <h3 style="margin:0">Your review</h3>
+                        <label class="field">What is it like to live here?<textarea maxlength="1000" @bind="review.Text"></textarea></label>
+                        <div class="form-grid">
+                            <label class="field">Cleanliness (1–5)<input type="number" min="1" max="5" @bind="review.Cleanliness" /></label>
+                            <label class="field">Quietness (1–5)<input type="number" min="1" max="5" @bind="review.Quietness" /></label>
+                            <label class="field">Shared spaces (1–5)<input type="number" min="1" max="5" @bind="review.Facilities" /></label>
+                        </div>
+                        <div class="inline"><button class="button" @onclick="SaveReview">Save review</button><span role="status" class="status @(reviewError ? "error" : "")">@reviewMessage</span></div>
+                    </div>
+                </Authorized>
+                <NotAuthorized><a class="button ghost" href="/Account/Login">Sign in to write a review</a></NotAuthorized>
+            </AuthorizeView>
+        </section>
+    }
+    else
+    {
+        <div class="skeleton" style="height:360px;margin-top:16px"></div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [CascadingParameter] public PlannerState State { get; set; } = default!;
+    [CascadingParameter] public Preferences Plan { get; set; } = default!;
+
+    private ComplexEntity? complex;
+    private AreaReport? report;
+    private ImmutableArray<HomeResult> homes = [];
+    private List<ReviewEntity> reviews = [];
+    private ReviewEntity review = new();
+    private MapData mapData = MapData.Empty;
+    private bool loaded, reviewError;
+    private string message = "", reviewMessage = "", key = "";
+
+    private static string F(double v) => v.ToString("F5", System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var next = $"{Id}|{Plan.CacheKey}";
+        if (next == key) return;
+        key = next;
+        complex = (await Housing.Complexes()).FirstOrDefault(c => c.Id == Id);
+        loaded = true;
+        if (complex is null) return;
+        var location = complex.ToModel().Location;
+        report = await Finder.AnalyseAsync(location, Plan);
+        homes = (await Finder.RankAsync(Plan)).Where(h => h.Complex.Id == Id).ToImmutableArray();
+        reviews = await Housing.Reviews(Id);
+        review = new() { ComplexId = Id };
+        var markers = new List<MapMarker> { new(location.Lat, location.Lon, "home", complex.Name, Emphasis: true) };
+        markers.AddRange(report.Needs.Where(n => n.Nearest is not null).Select(n => new MapMarker(n.Nearest!.Location.Lat, n.Nearest.Location.Lon, n.Category.Key, n.Nearest.DisplayName, $"{n.WalkMinutes} min walk")));
+        mapData = new(markers);
+    }
+
+    private async Task Compare(int id) => message = (await State.ToggleCompareAsync(id)).Message;
+
+    private async Task SaveReview()
+    {
+        var result = await Housing.SaveReview(review);
+        (reviewMessage, reviewError) = (result.Message, !result.Success);
+        if (result.Success) { reviews = await Housing.Reviews(Id); review = new() { ComplexId = Id }; }
+    }
+}

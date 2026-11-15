@@ -1,0 +1,7 @@
+@switch (Kind)
+{
+    case ListingKind.Sourced: <span class="tag good" title="Published asking rent from krisha.kz">✔ Real listing</span> break;
+    case ListingKind.Sample: <span class="tag warn" title="Real building, illustrative price">Sample price</span> break;
+    default: <span class="tag info" title="Published by a Dwellio owner account">Owner listing</span> break;
+}
+@code { [Parameter] public ListingKind Kind { get; set; } }

@@ -1,44 +1,32 @@
-# Sources and limitations
+# Data sources
 
-- Eight named complexes and 32 seeded apartments: fictional classroom data in `SeedData.cs`, not scraped listings.
-- Coordinates: illustrative points in Astana, not verified locations of named complexes.
-- Amenities/walking times: manually authored teaching examples, not measured routes.
-- Bus times, routes and crowding: synthetic deterministic scenarios. No actual bus route number, occupancy feed or live forecast is claimed.
-- University labels: destination labels for scenarios, not a verified map/routing integration to the campuses.
-- Illustrations: original repository SVG artwork, not property photographs.
-- User images/contact data: author supplied, not verified by Dwellio.
-- Reviews: user opinions; residency unverified, counts visible and absent reviews never generate a rating.
-- OpenStreetMap: external embedded map, visible attribution and link. It requires internet. No bulk/offline tile download.
-- Fonts: local system fonts; no external font request.
+Every source is free and needs no API key or sign-up.
 
-Official references consulted:
-- https://learn.microsoft.com/en-us/aspnet/core/blazor/security/?view=aspnetcore-10.0
-- https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity?view=aspnetcore-10.0
-- https://operations.osmfoundation.org/policies/tiles/
+| Data | Source | Licence | How Dwellio uses it |
+|---|---|---|---|
+| Places (13 categories) and 1,100+ bus stops | [OpenStreetMap](https://www.openstreetmap.org) via the [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API) | ODbL 1.0 — attribution "© OpenStreetMap contributors" | Bundled snapshot (retrieved 2026-11-15) plus live refresh within 2.5 km of where you plan, cached 72 h |
+| Address search | [Nominatim](https://nominatim.org) (fallback [Photon](https://photon.komoot.io)) | ODbL | Limited to Astana's bounding box, max 1 request/second, identified User-Agent, results cached 6 h |
+| Map tiles | tile.openstreetmap.org via Leaflet | ODbL / OSM tile policy | Light interactive use with attribution |
+| Bus timing | Mansurova et al., *From Raw GPS to GTFS: A Real-World Open Dataset for Bus Travel Time Prediction*, [Zenodo DOI 10.5281/zenodo.15769359](https://doi.org/10.5281/zenodo.15769359) | CC BY 4.0 | Routes 10, 12, 46 (both directions), 55 service days Jul–Sep 2024. Median dwell and run times per stop and hour |
+| Asking rents | [krisha.kz](https://krisha.kz) listings, reviewed 2026-11-15 | Linked, not redistributed | Six "✔ Real listing" homes with source links; photos load from the provider |
+| Complex coordinates | Nominatim lookups | ODbL | Eleven real complexes |
 
-A future real-route adapter needs verified coverage, cost, caching rules and attribution. Missing live crowding data must remain unknown.
+## Why not 2GIS or Yandex?
 
-## Sourced rental examples
+They have complete Astana transit data but require registration and an API key. The project brief for this version is "free, no sign-up", so Dwellio uses OpenStreetMap plus the open GPS dataset. OpenStreetMap has stops for Astana but no bus route relations, so trips that buses 10, 12 and 46 do not cover get a clearly labelled estimate.
 
-Review date: 2026-11-15. Retrieved pages may be cached, from several days to a month old. This is not the listing update date. Prices are individual asking rents, not complex averages. Availability has not been confirmed.
+## Limitations to state honestly
 
-| Complex | Address | Rooms / area | Rent, KZT/month | Deposit, KZT | Source |
-|---|---|---|---|---|---|
-| GreenLine.Silva | E-899 5 | 1 / 35 m² | 250,000 | 100,000 | [Listing](https://krisha.kz/a/show/1010117448) |
-| GreenLine.Tokyo | Mukhamedkhanov Street 4B | 1 / 48 m² | 290,000 | 50,000 | [Listing](https://krisha.kz/a/show/672000122), [readable search results](https://krisha.kz/arenda/kvartiry/astana/?das%5Bmap.complex%5D=1152) |
-| GreenLine.Headliner | Tole Bi Street 48/1 | 2 / 61 m² | 400,000 | Unknown | [Listing](https://krisha.kz/a/show/1008481040) |
-| Expo New Life-2 | Mangilik El Avenue 51/2 | 2 / 77 m² | 330,000 | 200,000 | [Listing](https://krisha.kz/a/show/1002990387) |
-| Promenade Expo | Mangilik El Avenue 52 | 2 / 74 m² | 300,000 (archived) | Unknown | [Archived listing](https://krisha.kz/a/show/1017128178) |
-| Dream City | Mangilik El Avenue 47 | 2 / 70 m² | 350,000 headline / 400,000 description | 200,000 in description | [Listing](https://krisha.kz/a/show/1013748996) |
+- **Seat chance is a model**, not a measurement: no open source publishes passenger counts in Kazakhstan. See [recommendations.md](recommendations.md#seat-model).
+- The GPS data is from 2024; routes and timetables may have changed (CTS announces temporary changes).
+- The dataset tracks a sample of vehicles, so it gives reliable *times* but not frequency; a 10-minute headway is assumed.
+- OpenStreetMap is volunteer-edited: missing places (e.g. few gyms are mapped) mean "not mapped", not "does not exist".
+- "Sample price" homes are real buildings with illustrative rents. Sourced rents may be outdated; one is archived and one has a price conflict, both labelled.
 
-Tokyo was checked against the complex search results because its individual page could not be fetched; no photo URL has been verified for it. Other examples were read from their individual listing pages. Silva, Tokyo, Expo New Life-2 and Dream City charge utilities separately; the amount is unknown. Headliner's utility amount is unknown. Expo New Life-2 requests two months of rent in advance. Promenade Expo is archived and shown only as a historical price example. Dream City's conflicting rent values are explicitly shown in its card evidence.
+## Rebuilding the snapshots
 
-[BI Group](https://bi.group/ru/bigville/greenline) describes infrastructure across the wider GreenLine development. This does not verify a gym, park or coworking space inside every building. Coordinates, walking times, transport routes and bus occupancy have not been established for these examples.
-
-Implementation: `src/Dwellio.Web/Data/MarketReferences.cs`, displayed in the main `/catalog` through `MarketCatalog`. No user database is overwritten. Real examples are not assigned demo commute scores.
-
-## Source photos
-
-Five photo URLs were extracted from image links on the matching individual listing pages. They are loaded directly from `krisha-photos.kcdn.online`; no copies are stored in the repository. Each card links to the original listing and credits Krisha.kz as its source. A blocked or missing image produces an explicit fallback. Tokyo has no verified image URL and uses the fallback.
-
-The images are advertiser-supplied listing photos, not independently authenticated pictures. Attribution does not establish a redistribution license. Reuse permissions have not been obtained; obtain appropriate permission before redistributing or publicly deploying these photos. No BI Group photographs, owner contacts or full listing descriptions are copied.
+```sh
+python3 scripts/build_places_snapshot.py src/Dwellio.Web/Data/Places/astana-osm.json
+# download gtfs_data.zip from https://zenodo.org/records/15769359 and unzip it, then:
+python3 scripts/build_transit_snapshot.py <path>/gtfs_data src/Dwellio.Web/Data/Transit/astana-gtfs.json
+```

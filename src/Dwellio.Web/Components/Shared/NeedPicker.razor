@@ -1,0 +1,46 @@
+@* Tap once = "nice to have", twice = "must-have", three times = off.
+   Must-haves exclude homes; nice-to-haves only change the score. *@
+<div class="need-grid" role="group" aria-label="Places you want nearby">
+    @foreach (var category in PlaceCatalog.All)
+    {
+        var state = StateOf(category.Key);
+        <button type="button" class="need-chip @state" title="@category.Hint" aria-label="@AriaLabel(category, state)"
+                @onclick="() => Cycle(category.Key)">
+            <span class="emoji" aria-hidden="true">@category.Icon</span>
+            @category.Label
+            @if (state == "want") { <span class="state">want</span> }
+            else if (state == "must") { <span class="state">must</span> }
+        </button>
+    }
+</div>
+<p class="note" style="margin-top:8px">Tap once for <strong>want</strong>, twice for <strong>must-have</strong>, again to remove.</p>
+
+@code {
+    [Parameter] public ImmutableArray<string> Needs { get; set; } = [];
+    [Parameter] public ImmutableArray<string> MustHaves { get; set; } = [];
+    [Parameter] public EventCallback<(ImmutableArray<string> Needs, ImmutableArray<string> MustHaves)> Changed { get; set; }
+
+    private string StateOf(string key) =>
+        MustHaves.NullToEmpty().Contains(key) ? "must" : Needs.NullToEmpty().Contains(key) ? "want" : "off";
+
+    private static string AriaLabel(PlaceCategory c, string state) => state switch
+    {
+        "must" => $"{c.Label}: must-have. Activate to remove.",
+        "want" => $"{c.Label}: nice to have. Activate to make it a must-have.",
+        _ => $"{c.Label}: not selected. Activate to add.",
+    };
+
+    // Pure transition: (state, key) -> next state.
+    private Task Cycle(string key)
+    {
+        var needs = Needs.NullToEmpty();
+        var musts = MustHaves.NullToEmpty();
+        var next = StateOf(key) switch
+        {
+            "off" => (needs.Add(key), musts),
+            "want" => (needs.Remove(key), musts.Add(key)),
+            _ => (needs.Remove(key), musts.Remove(key)),
+        };
+        return Changed.InvokeAsync((PlaceCatalog.Normalize(next.Item1), PlaceCatalog.Normalize(next.Item2)));
+    }
+}

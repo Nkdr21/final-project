@@ -1,6 +1,35 @@
 @page "/admin"
-@attribute [Authorize(Roles="Admin")]
+@attribute [Authorize(Roles = "Admin")]
 @inject HousingService Housing
+
 <PageTitle>Moderation — Dwellio</PageTitle>
-<div class="shell section"><h1>Moderation</h1><p>Hiding is reversible. You can restore a listing or review.</p><h2>Listings</h2>@foreach(var l in listings){<div class="management-row"><span>@l.Title · @Labels.Money(l.Rent)</span><button class="button secondary" @onclick="()=>Toggle(l.Id,false)">@(l.Hidden?"Restore":"Hide")</button></div>}<h2>Reviews</h2>@foreach(var r in reviews){<div class="management-row"><span>@r.Text</span><button class="button secondary" @onclick="()=>Toggle(r.Id,true)">@(r.Hidden?"Restore":"Hide")</button></div>}<p role="status">@message</p></div>
-@code{List<ListingEntity> listings=[];List<ReviewEntity> reviews=[];string message="";protected override async Task OnInitializedAsync()=>await Load();async Task Load(){listings=await Housing.Listings(admin:true);reviews=await Housing.Reviews(admin:true);}async Task Toggle(int id,bool review){message=(await Housing.Moderate(id,review)).Message;await Load();}}
+
+<div class="shell page narrow">
+    <h1>Moderation</h1>
+    <p class="muted">Hiding is reversible — you can restore any listing or review.</p>
+    <p role="status" class="status">@message</p>
+    <section class="panel section">
+        <h2>Listings</h2>
+        @foreach (var l in listings)
+        {
+            <div class="manage-row"><span>@l.Title · @Labels.Money(l.Rent) <KindTag Kind="l.Kind" /></span><button class="button small ghost" @onclick="() => Toggle(l.Id, false)">@(l.Hidden ? "Restore" : "Hide")</button></div>
+        }
+    </section>
+    <section class="panel section">
+        <h2>Reviews</h2>
+        @if (reviews.Count == 0) { <p class="muted">No reviews.</p> }
+        @foreach (var r in reviews)
+        {
+            <div class="manage-row"><span>@r.Text</span><button class="button small ghost" @onclick="() => Toggle(r.Id, true)">@(r.Hidden ? "Restore" : "Hide")</button></div>
+        }
+    </section>
+</div>
+
+@code {
+    private List<ListingEntity> listings = [];
+    private List<ReviewEntity> reviews = [];
+    private string message = "";
+    protected override Task OnInitializedAsync() => Load();
+    private async Task Load() { listings = await Housing.Listings(admin: true); reviews = await Housing.Reviews(admin: true); }
+    private async Task Toggle(int id, bool review) { message = (await Housing.Moderate(id, review)).Message; await Load(); }
+}

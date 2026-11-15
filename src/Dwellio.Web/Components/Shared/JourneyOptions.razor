@@ -1,0 +1,98 @@
+@inject TransitService Transit
+
+@* Detailed commute: every option with its tactic, timeline, seat estimate and bus load chart. *@
+@switch (Plan)
+{
+    case TransitPlan t:
+        <div class="grid">
+            @foreach (var (option, i) in t.Options.Select((o, i) => (o, i)))
+            {
+                <article class="panel option @(i == 0 ? "best" : "")">
+                    <div class="option-head">
+                        <div>
+                            @if (i == 0) { <span class="tag info">Recommended for “@Labels.Priority(Priority)”</span> }
+                            <h3 style="margin:8px 0 2px">@TacticTitle(option)</h3>
+                            <p class="note" style="margin:0">@TacticText(option)</p>
+                        </div>
+                        <div style="text-align:right">
+                            <div class="option-time">@option.TotalMinutes<small style="font-size:14px"> min</small></div>
+                            <small>leave ~@option.LeaveAt</small>
+                        </div>
+                    </div>
+                    <SeatMeter Chance="option.SeatChance" />
+                    @if (option.StandingMinutes >= 1)
+                    {
+                        <p class="note" style="margin:0">If you don't get a seat: about @Math.Round(option.StandingMinutes) min standing on average@(SeatFrom(option) is { } s ? $"; seats usually free up after {s}" : "").</p>
+                    }
+                    <ol class="timeline">
+                        <li><span class="dot" aria-hidden="true">🚶</span><span>Walk to <strong>@option.Board.Name</strong></span><span class="min">@option.WalkToStop min</span></li>
+                        <li><span class="dot" aria-hidden="true">⏱️</span><span>Wait for bus @option.Route.Ref <small class="muted">(avg., assuming a bus every @BusAssumptions.Default.HeadwayMinutes min)</small></span><span class="min">@option.WaitMinutes min</span></li>
+                        <li><span class="dot" aria-hidden="true">🚌</span><span>Ride @option.Stops stops towards @option.Route.Terminus</span><span class="min">@option.RideMinutes min</span></li>
+                        <li><span class="dot" aria-hidden="true">📍</span><span>Get off at <strong>@option.Alight.Name</strong>, walk to @Destination</span><span class="min">@option.WalkFromStop min</span></li>
+                    </ol>
+                    <details class="more" @ontoggle="() => Toggle(option)">
+                        <summary>How full is bus @option.Route.Ref at @Labels.Hour(option.Hour)?</summary>
+                        @if (expanded.Contains(Key(option)))
+                        {
+                            <LoadChart Profile="Transit.Profile(option.Route, option.Hour)" From="option.BoardIndex" To="option.AlightIndex" Route="@option.Route.Ref" Hour="option.Hour" />
+                        }
+                    </details>
+                </article>
+            }
+        </div>
+        <p class="note">Times are medians from real GPS traces of bus @string.Join(", ", t.Options.Select(o => o.Route.Ref).Distinct()) (summer 2024). Seat chance is a model — see <a href="/about#seats">how it works</a>.</p>
+        break;
+
+    case WalkPlan w:
+        <div class="panel"><h3>🚶 Walk — @w.Minutes min</h3><p class="muted" style="margin:0">It's close enough to walk to @Destination; no bus needed.</p></div>
+        break;
+
+    case EstimatedBusPlan e:
+        <div class="panel stack">
+            <div class="spread"><h3 style="margin:0">🚌 About @Labels.Minutes(e.TotalMinutes) by bus</h3><span class="tag warn">Estimate</span></div>
+            <ol class="timeline">
+                <li><span class="dot" aria-hidden="true">🚶</span><span>Walk to <strong>@e.FromStop.DisplayName</strong></span><span class="min">@e.WalkToStop min</span></li>
+                <li><span class="dot" aria-hidden="true">⏱️</span><span>Wait (frequency unknown)</span><span class="min">~@e.WaitMinutes min</span></li>
+                <li><span class="dot" aria-hidden="true">🚌</span><span>Ride towards <strong>@e.ToStop.DisplayName</strong></span><span class="min">~@e.RideMinutes min</span></li>
+                <li><span class="dot" aria-hidden="true">📍</span><span>Walk to @Destination</span><span class="min">@e.WalkFromStop min</span></li>
+            </ol>
+            <p class="note" style="margin:0">Real bus stops from OpenStreetMap, but no free open timetable covers this trip, so the bus number, transfers and seat chance are unknown. Open GPS data exists for buses @string.Join(", ", Transit.RouteRefs).</p>
+        </div>
+        break;
+
+    case NoCommute n:
+        <div class="callout bad">@n.Reason Try a longer walking limit.</div>
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired] public CommutePlan Plan { get; set; } = default!;
+    [Parameter] public string Destination { get; set; } = "your destination";
+    [Parameter] public CommutePriority Priority { get; set; }
+
+    private readonly HashSet<string> expanded = [];
+    private static string Key(JourneyOption o) => $"{o.Route.Key}:{o.Hour}:{o.BoardIndex}";
+    private void Toggle(JourneyOption o) { if (!expanded.Add(Key(o))) expanded.Remove(Key(o)); }
+
+    private string? SeatFrom(JourneyOption o)
+    {
+        var free = Transit.Profile(o.Route, o.Hour)[o.BoardIndex].SeatFreeFromIndex;
+        return free is { } k && k < o.AlightIndex ? o.Route.Stops[k].Name : null;
+    }
+
+    private static string TacticTitle(JourneyOption o) => o.Tactic switch
+    {
+        Tactic.BoardEarlierStop => $"Walk back to {o.Board.Name}",
+        Tactic.LeaveEarlier => "Leave about an hour earlier",
+        Tactic.OtherRoute => $"Take bus {o.Route.Ref} instead",
+        _ => $"Bus {o.Route.Ref} from the nearest stop",
+    };
+
+    private static string TacticText(JourneyOption o) => o.Tactic switch
+    {
+        Tactic.BoardEarlierStop => "Board a few stops earlier, before most people get on — a better chance of a seat for a short extra walk.",
+        Tactic.LeaveEarlier => $"The bus is calmer before the rush. You'll arrive with time to spare (bus around {Labels.Hour(o.Hour)}).",
+        Tactic.OtherRoute => "A different route with a different load pattern.",
+        _ => $"The usual way: closest stop, bus around {Labels.Hour(o.Hour)}.",
+    };
+}

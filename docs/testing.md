@@ -1,52 +1,55 @@
-# Verification record
+# Testing
 
-## Current local checks — 2026-11-15
-
-- Build: 0 warnings, 0 errors. C# tests: 46 passed, 0 failed, 0 skipped (41 before this audit).
-- Added five regression cases: zero/negative budgets and short/blank/space-padded review text.
-- Core has no EF dependency. Unit tests cover deterministic scores, weight-driven ranking reversal, costs and route outcomes. HousingService tests use actual in-memory SQLite to check persistence and authorization. Comparison tests cover storage through an IJSRuntime test double.
-- HTTP smoke: 11 public pages and 3 anonymous authorization redirects passed.
-- Chrome: 10 grouped checks passed: negative source budget; source filtering/empty state/avenue filter; anonymous admin/edit redirects; demo budget correction; comparison surviving reload; unavailable routes; preferences opening demo results; four desktop pages; four mobile pages; keyboard skip link.
-- Full-page screenshots replace the old images in screenshots/: Home, Catalog, Apartment and Compare, at 1440×1000 and 390×844 viewports. Catalog photos are sourced; Tokyo has no verified photo and shows a fallback. Demo detail/comparison still use illustrations.
-- Lighthouse 13.6.0 mobile catalog accessibility: 100/100, no failed automated audits after the logo fix. This is one page, not full accessibility certification. Summary: [accessibility.json](accessibility.json).
-- Visual inspection found no horizontal overflow on the four tested pages. Physical phones, Safari/Firefox, full keyboard/screen-reader flows and authenticated browser scenarios remain unverified.
-- Student writes and another Owner's edits are rejected in server-service tests; do not describe these as completed signed-in browser tests.
-
-## Repeat the checks
-
-From the repository root:
+## Automated (.NET)
 
 ```sh
-dotnet build
-dotnet test
-dotnet run --project src/Dwellio.Web --launch-profile http
+dotnet test                                   # 98 tests
+dotnet test --collect:"XPlat Code Coverage"
 ```
 
-Keep the server running and use another terminal:
+| Suite | What it proves |
+|---|---|
+| `GeoTests` | Haversine against a known distance, walking minutes, offsets, Astana bounds |
+| `PlaceCatalogTests`, `OsmDataTests` | Tag classification is unique; Overpass parsing (nodes, way centres, irrelevant tags, error pages); snapshot round trip; query covers every tag; bundled snapshot covers Astana |
+| `PlaceIndexTests` | Grid index equals brute force on real data; radius and ordering; immutable `ReplaceArea` |
+| `AreaAnalysisTests` | Nearest place, missing must-haves, lifestyle decay, no needs = 0 |
+| `SeatModelTests` | Activity from dwell; boarding split; seat chance monotonic and bounded; the fold keeps loads physical; real route 46 peaks mid-route |
+| `TransitNetworkTests` | Bundled GTFS summary: 3 routes × 2 directions, nearest-hour fallback |
+| `JourneyPlannerTests` | Walk vs bus; correct stops; "walk back to an emptier stop" appears with a real trade-off; ties and dominated options hidden; estimate fallback; explicit no-commute; Comfort Town → Khan Shatyr uses bus 46 |
+| `HomeMatcherTests` | Exclusions with reasons; must-have vs want; unknown commute never positive; weights change ranking; costs; validation messages; sanitising tampered storage |
+| `AreaSearchTests` | Grid bounds; areas sorted, distinct, satisfy must-haves and commute limit |
+| `PlannerStateTests` | Plan and comparison survive reloads; invalid updates rejected; tampered/broken storage repaired; blocked storage keeps working and says so |
+| `OverpassClientTests` | Busy mirror skipped; all mirrors failing returns null; offline mode makes no requests |
+| `HomeFinderIntegrationTests` | Real seed + bundled data, offline: all homes ranked, AITU homes walk, Comfort Town takes bus 46 |
+| `HousingServiceTests` | Real in-memory SQLite: authorization, favourites isolation, owner edits, moderation, reviews, corrupted profile JSON |
+
+## HTTP smoke test
 
 ```sh
-python3 scripts/http_smoke.py
-npm ci --prefix scripts
-node scripts/browser-audit.mjs
+python3 scripts/http_smoke.py http://localhost:5180
 ```
 
-The optional browser tooling requires Node.js 22.19+ and installed Google Chrome. The application and business logic remain C#/.NET. The browser suite uses a fresh context and does not create accounts or edit listings. Set DWELLIO_URL to test a different server; default is http://localhost:5180. Set DWELLIO_SCREENSHOTS=docs/screenshots only when intentionally replacing screenshots. Without that variable, the suite does not write screenshots.
+Checks every page answers with the app shell, assets (Leaflet, map module) are served and `/owner`, `/admin`, `/favorites` redirect anonymous users to sign-in.
 
-For Lighthouse (server running):
+## Browser audit
 
 ```sh
-node scripts/node_modules/lighthouse/cli/index.js http://localhost:5180/catalog --only-categories=accessibility --chrome-flags="--headless" --output=json --output-path=/tmp/dwellio-accessibility.json
+npm ci --prefix scripts            # Node.js 22+
+node scripts/browser-audit.mjs     # uses Google Chrome; or CHROME_PATH=/usr/bin/chromium
 ```
 
-## Verified fixes
+Last run 2026-11-15 on Linux, Chromium, desktop 1440×1000 — all passed with no console errors:
 
-- Non-positive source rent budget produces an error; empty results suggest filter changes.
-- Correcting the demo budget clears its old error.
-- Applying preferences opens the matching section automatically.
-- Reviews are trimmed before validation, preventing whitespace padding from bypassing minimum length.
-- Logo accessible name and keyboard skip target corrected.
-- Comparison survives same-tab reload. Blocked storage limits persistence; cross-device synchronization is not implemented.
+- Areas tab shows 6 ranked areas.
+- Making "Spa & sauna" a must-have changes results (6 → 0 homes: no mapped sauna near any listing).
+- Budget 0 is rejected with a message.
+- Two homes in comparison survive a reload.
+- Changing the destination to Khan Shatyr survives a reload.
+- Commute planner from Comfort Town shows options and the bus load chart.
+- Home details render; a missing home and an invalid area link show friendly pages.
 
-## CI and remaining limits
+Screenshots in `docs/screenshots/` were captured the same day at 1440×1000 and 390×844 (emulated phone).
 
-Cleanup commit a839084 passed Windows/Linux/macOS in [run 43693225603](https://github.com/Nkdr21/final-project/actions/runs/43693225603). The new audit changes require their own CI run after commit/push. The workflow runs C# build/tests; browser/Lighthouse checks were local, not CI jobs. Hosted server deployment, live routes and verified rental availability remain unverified. GitHub Pages cannot host the Blazor server.
+## Not yet verified
+
+Physical phones, Safari/Firefox, screen readers end to end, signed-in browser flows, load testing.

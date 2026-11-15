@@ -1,27 +1,85 @@
 @page "/"
-<PageTitle>Student housing in Astana — Dwellio</PageTitle>
-<section class="housing-intro shell">
-    <span class="eyebrow">ASTANA · STUDENT HOUSING</span>
-    <h1>Find a home that fits your life.</h1>
-    <p>Compare rent, everyday essentials and the trips you make most.</p>
-    <div class="home-search">
-        <div><strong>Rent an apartment</strong><span>Astana · sourced prices and listing links</span></div>
-        <a class="button" href="/catalog">Browse apartments</a>
-        <a class="button secondary" href="/preferences">Set budget &amp; priorities</a>
+@inject HomeFinder Finder
+@inject NavigationManager Nav
+
+<PageTitle>Dwellio — plan your life in Astana around your daily place</PageTitle>
+
+<section class="shell hero">
+    <div>
+        <span class="eyebrow">Moving to Astana?</span>
+        <h1>Live where your day is easy.</h1>
+        <p class="lead">Tell Dwellio where you study or work and what you want nearby — gym, spa, cafés, groceries. It finds homes and areas where those are a short walk away, and plans a bus ride where you're more likely to sit.</p>
+        <div class="stack" style="max-width:520px">
+            <PlaceSearch Label="Where do you go every day?" Placeholder="Where do you go every day? e.g. Astana IT University" OnSelected="Start" />
+            <div class="inline">
+                <span class="note">Popular:</span>
+                @foreach (var s in GeocodingService.Popular.Take(4))
+                {
+                    <button class="button small ghost" @onclick="() => Start(s)">@s.Name</button>
+                }
+            </div>
+        </div>
     </div>
-    <div class="home-links"><a href="/complexes">Explore residential complexes →</a><a href="/compare">Open comparison →</a></div>
+    <div class="hero-art" aria-hidden="true">
+        <div class="panel tight">
+            <div class="spread"><strong>Expo New Life · 2 rooms</strong><span class="score"><span>86<small>fit</small></span></span></div>
+            <div class="tags" style="margin-top:8px"><span class="tag good">🏋️ 4′</span><span class="tag good">☕ 3′</span><span class="tag good">🛒 2′</span><span class="tag good">💊 6′</span></div>
+        </div>
+        <div class="panel tight">
+            <div class="spread"><strong>🚌 Bus 46 · walk back 1 stop</strong><span class="tag good">💺 78%</span></div>
+            <div class="meter" style="margin-top:8px"><span style="width:78%"></span></div>
+            <small>vs 22% from the nearest stop at 08:00</small>
+        </div>
+        <small class="note" style="text-align:center">Illustration of a result</small>
+    </div>
 </section>
+
 <section class="shell section">
-    <div class="section-heading"><div><span class="eyebrow">APARTMENTS</span><h2>Explore sourced homes</h2></div><a class="text-link" href="/catalog">View all apartments →</a></div>
-    <p class="data-note">Published rental examples, not a live availability feed. Confirm prices and terms with the original advertiser.</p>
-    <div class="cards">@foreach (var home in MarketReferences.All.Where(x => !x.Archived && x.PhotoUrl is not null).Take(3)) { <MarketCard Home="home" Changed="Refresh" /> }</div>
-</section>
-<section class="shell housing-guide">
-    <h2>Check more than the monthly rent</h2>
-    <div class="guide-grid">
-        <div><h3>Monthly costs</h3><p>Compare rent, utilities, transport and your gym budget. Keep the one-time deposit separate.</p></div>
-        <div><h3>Everyday essentials</h3><p>Look for groceries, a pharmacy, a park and places to study or exercise.</p></div>
-        <div><h3>Travel both ways</h3><p>Compare morning and evening journey scenarios. Live bus occupancy is not available.</p></div>
+    <div class="steps">
+        <div class="panel"><h3>Pick your daily place</h3><p class="muted" style="margin:0">University, office or any address in Astana — searched with OpenStreetMap.</p></div>
+        <div class="panel"><h3>Choose what you need nearby</h3><p class="muted" style="margin:0">13 kinds of places, each “want” or “must-have”, within your walking limit.</p></div>
+        <div class="panel"><h3>Get homes, areas and a seat plan</h3><p class="muted" style="margin:0">Ranked homes, the best areas on a map, and bus tactics that raise your chance of a seat.</p></div>
     </div>
 </section>
-@code { void Refresh() => StateHasChanged(); }
+
+@if (!top.IsDefaultOrEmpty)
+{
+    <section class="shell section">
+        <div class="spread"><h2 style="margin:0">Top homes for your current plan</h2><a href="/plan">See all →</a></div>
+        <p class="muted">Going to @Plan.DestinationName · wanting @string.Join(", ", Plan.AllNeeds.Select(PlaceCatalog.Label).Take(4)).</p>
+        <div class="grid-3">
+            @foreach (var home in top) { <HomeCard @key="home.Listing.Id" Result="home" Selected="State.CompareIds.Contains(home.Listing.Id)" OnCompare="id => State.ToggleCompareAsync(id)" /> }
+        </div>
+    </section>
+}
+
+<section class="shell section">
+    <h2>Built on free, open data</h2>
+    <div class="source-list">
+        <div class="panel tight"><strong>🗺️ OpenStreetMap</strong><p class="note" style="margin:0">4,400+ places and 1,100+ bus stops in Astana, refreshed live through the Overpass API.</p></div>
+        <div class="panel tight"><strong>🔎 Nominatim &amp; Photon</strong><p class="note" style="margin:0">Free address search, limited to Astana.</p></div>
+        <div class="panel tight"><strong>🚌 Astana bus GPS dataset</strong><p class="note" style="margin:0">Real run and dwell times of buses 10, 12 and 46 (Zenodo, CC BY 4.0).</p></div>
+        <div class="panel tight"><strong>🏠 krisha.kz</strong><p class="note" style="margin:0">Sourced asking rents, linked to the original listing.</p></div>
+    </div>
+    <p class="note section"><a href="/about">How Dwellio works, its limits and its sources →</a></p>
+</section>
+
+@code {
+    [CascadingParameter] public PlannerState State { get; set; } = default!;
+    [CascadingParameter] public Preferences Plan { get; set; } = default!;
+    private ImmutableArray<HomeResult> top = [];
+    private string key = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (key == Plan.CacheKey) return;
+        key = Plan.CacheKey;
+        top = (await Finder.RankAsync(Plan)).Where(h => h.Match.Eligible).Take(3).ToImmutableArray();
+    }
+
+    private async Task Start(Suggestion s)
+    {
+        await State.Update(p => p with { DestinationName = s.Name, DestinationLat = s.Location.Lat, DestinationLon = s.Location.Lon });
+        Nav.NavigateTo("/plan");
+    }
+}

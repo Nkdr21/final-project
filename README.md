@@ -5,32 +5,39 @@
 
 # Dwellio
 
-Dwellio is a student housing web application for Astana that explores rent, everyday amenities and travel preferences. It uses C#/.NET 10, Blazor Web App, Entity Framework Core and SQLite. The coursework focuses on records, pure functions, LINQ, pattern matching and testing C# business logic.
+Dwellio helps students and newcomers choose where to live in Astana around the place they go every day. Pick your university or office, choose what you want within walking distance (gym, spa & sauna, restaurants, cafés, groceries, pharmacy, parks and more), and Dwellio:
+
+- ranks homes and finds the **best areas** where those places are a short walk away, using real OpenStreetMap data;
+- plans the **bus ride** with real GPS timing and estimates your **chance of a seat**, suggesting tactics such as walking back to an emptier stop or leaving earlier;
+- compares monthly costs, everyday places and commute side by side.
+
+Built with C# / .NET 10, Blazor, Entity Framework Core, SQLite and Leaflet. All decisions are pure functions over immutable records in `Dwellio.Core`. Every data source is free and needs **no API key or sign-up**.
 
 ## Screenshots
 
-Current interface captured on 2026-11-15 in Chrome at desktop 1440×1000 and mobile 390×844 viewports (full-page images). The catalog shows sourced rental photos; apartment details and comparison show labelled demo data. Mobile is emulation, not a physical-device test.
+Captured 2026-11-15 in Chromium at 1440×1000 (desktop) and 390×844 (emulated phone).
 
 | Screen | Desktop | Mobile |
 |---|---|---|
 | Home | [Desktop](docs/screenshots/home-desktop.jpg) | [Mobile](docs/screenshots/home-mobile.jpg) |
-| Catalog | [Desktop](docs/screenshots/catalog-desktop.jpg) | [Mobile](docs/screenshots/catalog-mobile.jpg) |
-| Apartment | [Desktop](docs/screenshots/apartment-desktop.jpg) | [Mobile](docs/screenshots/apartment-mobile.jpg) |
-| Comparison | [Desktop](docs/screenshots/compare-desktop.jpg) | [Mobile](docs/screenshots/compare-mobile.jpg) |
+| Planner — homes | [Desktop](docs/screenshots/plan-desktop.jpg) | [Mobile](docs/screenshots/plan-mobile.jpg) |
+| Planner — best areas | [Desktop](docs/screenshots/areas-desktop.jpg) | [Mobile](docs/screenshots/areas-mobile.jpg) |
+| Home details | [Desktop](docs/screenshots/home-details-desktop.jpg) | [Mobile](docs/screenshots/home-details-mobile.jpg) |
+| Commute & seat planner | [Desktop](docs/screenshots/commute-desktop.jpg) | [Mobile](docs/screenshots/commute-mobile.jpg) |
+| Compare | [Desktop](docs/screenshots/compare-desktop.jpg) | [Mobile](docs/screenshots/compare-mobile.jpg) |
 
-## Features
+## How to use it
 
-- Browse sourced Astana rental examples in the main catalog, filter by rent, address or Mangilik El avenue, and open the original listing.
-- View source listing photos where available, review dates, deposits and archived-price labels.
-- Explore the expandable demo matching workflow with budget, amenity and commute preferences.
-- Compare up to three demo apartments, including costs and journey scenarios.
-- Save homes and preferences after signing in.
-- Search demo complexes by amenities and submit reviews.
-- Publish and edit your own listings as Owner; hide or restore listings and reviews as Admin.
+1. **Plan my move** (`/plan`): search where you go every day. Tap a place type once for *want*, twice for *must-have*. Set walking distance, arrival time, seat/speed preference and budget. Results update instantly; your plan is remembered in the browser.
+2. **Homes** tab: ranked homes with fit score, commute and walking minutes per need. Homes that miss a requirement are listed separately with the reason.
+3. **Areas** tab: the best neighbourhoods on the map, even without a listing. Tap the map to check any spot.
+4. **Home page** (`/homes/{id}`): nearest real places, the bus plan with seat chance and load chart, monthly costs and why it fits.
+5. **Commute** (`/commute`): plan any trip, compare tactics, explore how full buses 10, 12 and 46 get by time of day.
+6. **Compare** up to three homes; **sign in** to save homes and keep your plan on every device. Owners can publish listings.
 
 ## Run locally
 
-Install Git and .NET SDK 10. C# Dev Kit is recommended for VS Code. To download and run the project:
+Install Git and .NET SDK 10. C# Dev Kit is recommended for VS Code.
 
 ```sh
 git clone https://github.com/Nkdr21/final-project.git
@@ -39,74 +46,74 @@ dotnet restore
 dotnet run --project src/Dwellio.Web --launch-profile http
 ```
 
-Open [http://localhost:5180/catalog](http://localhost:5180/catalog) after the terminal reports that the server is listening. Stop with `Ctrl+C`.
+Open [http://localhost:5180](http://localhost:5180) after the terminal reports that the server is listening. Stop with `Ctrl+C`.
 This is a local address, not a hosted demo: each reviewer must run the app on their own computer. If the repository is already downloaded, run the last two commands from its root folder.
+To open the running app on a phone connected to the same Wi-Fi, restart it with this profile and visit `http://<computer-LAN-IP>:5180` on the phone (for example, `http://192.168.0.16:5180`). The computer's LAN IP can be found with `hostname -I` on Linux or `ipconfig` on Windows. The computer's firewall must allow incoming connections on port 5180.
 VS Code also provides **Terminal → Run Task → Dwellio: run**.
-Local SQLite databases are created under `src/Dwellio.Web/App_Data/` and excluded from Git.
+
+Internet is optional: without it the app uses the bundled OpenStreetMap snapshot and the map tiles are hidden. To force offline mode set `OpenData__LiveRequests=false`.
+Local SQLite databases are created under `src/Dwellio.Web/App_Data/` and excluded from Git. When the housing schema changes, the local housing database is rebuilt automatically (local favourites, reviews and owner listings are reset).
 
 ## Test accounts
 
 Register through **Sign in → Register as a new user**. Select **I want to publish listings** for Owner; otherwise the role is Student. Public Admin registration is not available.
-Setting the local environment variable `DWELLIO_DEMO_PASSWORD` before startup creates `student@dwellio.test`, `owner@dwellio.test` and `admin@dwellio.test` if they do not exist. Choose a value satisfying Identity rules; do not commit it. Changing the variable does not reset existing passwords.
+Setting the local environment variable `DWELLIO_DEMO_PASSWORD` before startup creates `student@dwellio.test`, `owner@dwellio.test` and `admin@dwellio.test` if they do not exist. Choose a value satisfying Identity rules; do not commit it.
 
 ## Tests
 
 ```sh
 dotnet build
-dotnet test
-dotnet test --collect:"XPlat Code Coverage"
+dotnet test                                     # 98 tests
+python3 scripts/http_smoke.py                   # with the app running
+npm ci --prefix scripts && node scripts/browser-audit.mjs   # optional, needs Chrome
 ```
 
-Last completed check on 2026-11-15: 46 tests passed, none failed or skipped; build completed with zero errors and warnings. Photo/catalog HTTP checks and remaining visual checks are recorded in [testing notes](docs/testing.md).
-The cleanup commit `a839084` is checked by [this GitHub Actions run](https://github.com/Nkdr21/final-project/actions/runs/43693225603). Check its Windows, Linux and macOS jobs for the recorded results; [all workflow runs](https://github.com/Nkdr21/final-project/actions) show checks for later commits.
-With the app running, `python3 scripts/http_smoke.py` checks public HTTP pages and authorization redirects. For the optional Chrome browser suite, install Node.js 22.19+ and Google Chrome, run `npm ci --prefix scripts`, then `node scripts/browser-audit.mjs`. See [testing](docs/testing.md) for scope and results.
+Last check on 2026-11-15: build with zero warnings, 98 tests passed, HTTP smoke test and browser audit passed. See [testing](docs/testing.md). [GitHub Actions](https://github.com/Nkdr21/final-project/actions) runs build and tests on Windows, Linux and macOS.
+
+## Data sources
+
+| Data | Source |
+|---|---|
+| Places and bus stops | © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (ODbL) — bundled snapshot + live [Overpass API](https://overpass-api.de) |
+| Address search | [Nominatim](https://nominatim.org), [Photon](https://photon.komoot.io) |
+| Bus timing (routes 10, 12, 46) | Mansurova et al., [Zenodo 10.5281/zenodo.15769359](https://doi.org/10.5281/zenodo.15769359), CC BY 4.0 |
+| Asking rents | [krisha.kz](https://krisha.kz) listings, linked |
+| Maps | [Leaflet](https://leafletjs.com) (BSD-2, bundled) |
+
+Details, licences and limits: [data sources](docs/data-sources.md).
 
 ## Project structure
 
 | Path | Purpose |
 |---|---|
-| `src/Dwellio.Core/` | C# models, matching and cost calculations, amenity filters, route scenarios |
-| `src/Dwellio.Web/` | Blazor pages, accounts, services, database, styles and sourced rental references |
-| `tests/Dwellio.Tests/` | Unit tests and SQLite integration tests |
-| `docs/` | Architecture, data, grading evidence, testing and team plan |
-| `docs/screenshots/` | Application screenshots |
-| `scripts/` | HTTP and optional Chrome browser checks |
-| `.github/workflows/` | Automated builds and tests |
-| `.vscode/` | Run tasks and extension recommendations |
-| `Dwellio.slnx`, `global.json` | Solution projects and SDK selection |
-
-## Architecture and C#
-
-Core contains calculations without database access. Web connects the interface, authorization and persistence. Tests cover calculations and service operations.
+| `src/Dwellio.Core/` | Pure C#: geo maths, place catalogue and spatial index, area analysis, seat model, journey planner, home matching |
+| `src/Dwellio.Web/` | Blazor pages and components, state container, open-data clients, accounts, database, bundled data |
+| `tests/Dwellio.Tests/` | Unit, integration (SQLite, real data) and service tests with fake HTTP/browser storage |
+| `docs/` | Architecture, data model, sources, calculations, testing, grading evidence, defence guide |
+| `scripts/` | Open-data snapshot builders, HTTP smoke test, browser audit |
+| `.github/workflows/` | CI build and tests |
 
 ```mermaid
 flowchart LR
-    UI[Blazor Web] --> Core[C# Core: records, LINQ, pure functions]
-    UI --> Service[HousingService]
-    Service --> DB[(SQLite / EF Core)]
+    UI[Blazor UI + Leaflet] --> State[PlannerState]
+    UI --> Finder[HomeFinder]
+    Finder --> Core[Dwellio.Core<br/>pure functions, records]
+    Finder --> Places[PlaceService] --> OSM((OpenStreetMap))
+    Finder --> Transit[TransitService<br/>GTFS summary]
+    Finder --> DB[(SQLite)]
     Tests[xUnit] --> Core
-    Tests --> Service
+    Tests --> Finder
 ```
 
-See [architecture](docs/architecture.md) and [lecture mapping](docs/grading-checklist.md#functional-c-lecture-mapping).
-
-## Data
-
-The main catalog contains six sourced rental examples with addresses, asking rents and original listing links. Availability is unconfirmed, one example is archived, and one source has conflicting prices. Photos load from the original listing provider where a photo URL was retrieved; failed images show a fallback.
-The expandable demo workflow uses eight fictional complexes and 32 apartments with synthetic coordinates, prices, amenities, routes and bus loads. Its SVG images are illustrations. Real examples are not assigned synthetic scores and are not yet integrated with demo comparison or favorites.
-See [data sources](docs/data-sources.md) for provenance and limitations.
+See [architecture](docs/architecture.md), [how results are calculated](docs/recommendations.md) and the [lecture mapping](docs/grading-checklist.md#functional-c-lecture-mapping).
 
 ## Limitations
 
-- Email confirmation is disabled and email delivery is not configured.
-- Server deployment is not verified; GitHub Pages does not run Blazor Server and SQLite.
-- A limited Chrome browser suite exists. Signed-in browser flows, physical phones and full accessibility/cross-browser checks remain unverified.
-- Comparison persists through reload in the same tab using `sessionStorage`; it is not synchronized across devices. Blocked storage limits persistence to the current circuit.
-- Live routing, bus occupancy and rental availability are not verified. Reviewer residency is not verified.
-- Demo catalog computation is in memory with a 500-record cap; load performance is not measured.
-- The housing database uses `EnsureCreated`; schema changes need a migration plan.
-- Uploads have a 5 MB limit and basic signature checks; quotas and orphan cleanup are not implemented.
-- External source photos require internet and may disappear. Photo reuse permissions for redistribution have not been established.
+- **Seat chance is an estimate** from 2024 GPS dwell times, not a live passenger count. Only buses 10, 12 and 46 have open timing; other trips show a labelled estimate between real stops.
+- OpenStreetMap is volunteer-mapped: some places are missing (few gyms are mapped in Astana).
+- "Sample price" homes are real buildings with illustrative rents; sourced rents may be outdated.
+- Email confirmation is disabled; server deployment is not verified.
+- Physical phones, Safari/Firefox and full accessibility audits are not yet tested.
 
 ## Contributors
 
@@ -114,11 +121,11 @@ See [data sources](docs/data-sources.md) for provenance and limitations.
 
 ## Documentation
 
-- [Architecture and folders](docs/architecture.md)
+- [Architecture](docs/architecture.md)
 - [Data model](docs/data-model.md)
 - [Data sources](docs/data-sources.md)
-- [Recommendation rules](docs/recommendations.md)
-- [Grading evidence and C# lectures](docs/grading-checklist.md)
+- [How results are calculated](docs/recommendations.md)
 - [Testing](docs/testing.md)
+- [Grading evidence and lecture mapping](docs/grading-checklist.md)
 - [Team plan](docs/team-plan.md)
-- [Defense outline](docs/defense.md)
+- [Defence guide](docs/defense.md)

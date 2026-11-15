@@ -1,0 +1,116 @@
+@implements IDisposable
+@inject GeocodingService Geocoder
+
+@* Accessible combobox: instant local suggestions (popular places, bus stops), then street
+   addresses from OpenStreetMap Nominatim after a short pause in typing (debounced). *@
+<div class="place-search">
+    <label class="sr-only" for="@id">@Label</label>
+    <span class="search-icon" aria-hidden="true">🔎</span>
+    <input id="@id" class="input" type="search" autocomplete="off" placeholder="@Placeholder"
+           role="combobox" aria-expanded="@(open ? "true" : "false")" aria-controls="@($"{id}-list")" aria-autocomplete="list"
+           aria-activedescendant="@(active >= 0 ? $"{id}-{active}" : null)"
+           value="@text" @oninput="OnInput" @onfocus="Open" @onblur="Close" @onkeydown="OnKey" />
+    @if (open)
+    {
+        <ul class="suggestions" id="@($"{id}-list")" role="listbox" aria-label="@Label">
+            @for (var i = 0; i < items.Length; i++)
+            {
+                var item = items[i];
+                var index = i;
+                <li id="@($"{id}-{index}")" role="option" aria-selected="@(index == active ? "true" : "false")"
+                    @onmousedown="() => Choose(item)" @onmousedown:preventDefault>
+                    <span aria-hidden="true">@Icon(item.Kind)</span>
+                    <span><strong>@item.Name</strong><small class="muted">@item.Detail</small></span>
+                </li>
+            }
+            @if (searching) { <li class="hint" role="presentation"><span class="spinner" aria-hidden="true"></span> Searching addresses…</li> }
+            else if (items.Length == 0) { <li class="hint" role="presentation">No places found in Astana. Try a street and house number.</li> }
+            @if (remoteFailed) { <li class="hint" role="presentation">Address search is offline — popular places and bus stops still work.</li> }
+        </ul>
+    }
+    <span class="sr-only" aria-live="polite">@(open ? $"{items.Length} suggestions" : "")</span>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Search a place";
+    [Parameter] public string Placeholder { get; set; } = "University, office or address";
+    [Parameter] public EventCallback<Suggestion> OnSelected { get; set; }
+
+    private readonly string id = "ps-" + Guid.NewGuid().ToString("N")[..6];
+    private string text = "";
+    private ImmutableArray<Suggestion> items = [];
+    private bool open, searching, remoteFailed;
+    private int active = -1;
+    private CancellationTokenSource? pending;
+
+    private static string Icon(SuggestionKind kind) => kind switch
+    {
+        SuggestionKind.Popular => "⭐",
+        SuggestionKind.Stop => "🚌",
+        _ => "📍",
+    };
+
+    private async Task Open()
+    {
+        if (items.IsDefaultOrEmpty) items = await Geocoder.LocalAsync(text);
+        open = true;
+    }
+
+    private async Task Close()
+    {
+        await Task.Delay(120); // let a click on an option finish first
+        open = false;
+        active = -1;
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        text = e.Value?.ToString() ?? "";
+        pending?.Cancel();
+        pending = new CancellationTokenSource();
+        var token = pending.Token;
+        items = await Geocoder.LocalAsync(text, token);
+        active = items.Length > 0 ? 0 : -1;
+        open = true;
+        remoteFailed = false;
+        if (text.Trim().Length < 3) return;
+        try
+        {
+            await Task.Delay(450, token); // debounce: wait until typing pauses
+            searching = true;
+            StateHasChanged();
+            var remote = await Geocoder.RemoteAsync(text, token);
+            if (token.IsCancellationRequested) return;
+            remoteFailed = remote.IsEmpty && items.IsEmpty;
+            items = items.Concat(remote).DistinctBy(s => (s.Name, Math.Round(s.Location.Lat, 3), Math.Round(s.Location.Lon, 3))).Take(10).ToImmutableArray();
+        }
+        catch (OperationCanceledException) { }
+        finally { if (!token.IsCancellationRequested) searching = false; }
+    }
+
+    private async Task OnKey(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown": open = true; active = items.Length == 0 ? -1 : (active + 1) % items.Length; break;
+            case "ArrowUp": active = items.Length == 0 ? -1 : (active - 1 + items.Length) % items.Length; break;
+            case "Enter" when open && active >= 0 && active < items.Length: await Choose(items[active]); break;
+            case "Escape": open = false; active = -1; break;
+        }
+    }
+
+    private async Task Choose(Suggestion s)
+    {
+        text = "";
+        open = false;
+        active = -1;
+        items = [];
+        await OnSelected.InvokeAsync(s);
+    }
+
+    public void Dispose()
+    {
+        pending?.Cancel();
+        pending?.Dispose();
+    }
+}

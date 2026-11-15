@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text.Json;
 using Dwellio.Core.Models;
-using Dwellio.Core.Services;
+using Dwellio.Core.Matching;
 using Dwellio.Web.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -44,7 +44,7 @@ public class HousingService(IDbContextFactory<HousingDbContext> factory, Authent
         await using var db = await factory.CreateDbContextAsync();
         if (!await db.Complexes.AnyAsync(x => x.Id == input.ComplexId)) return OperationResult.Fail("Select a residential complex.");
         ListingEntity entity;
-        if (input.Id == 0) { entity = new ListingEntity { OwnerId = id }; db.Listings.Add(entity); }
+        if (input.Id == 0) { entity = new ListingEntity { OwnerId = id, Kind = ListingKind.Owner }; db.Listings.Add(entity); }
         else
         {
             var existing = await db.Listings.FindAsync(input.Id);
@@ -81,17 +81,19 @@ public class HousingService(IDbContextFactory<HousingDbContext> factory, Authent
         var id = await UserId(); if (id is null) return null;
         await using var db = await factory.CreateDbContextAsync();
         var profile = await db.Profiles.FindAsync(id);
-        return profile is null ? null : JsonSerializer.Deserialize<Preferences>(profile.PreferencesJson);
+        if (profile is null) return null;
+        try { return JsonSerializer.Deserialize<Preferences>(profile.PreferencesJson) is { } p ? HomeMatcher.Sanitize(p) : null; }
+        catch (JsonException) { return null; } // saved by an older version: start from defaults
     }
     public async Task<OperationResult> SavePreferences(Preferences value)
     {
-        var valid = RecommendationEngine.Validate(value); if (!valid.Success) return valid;
-        var id = await UserId(); if (id is null) return OperationResult.Fail("Sign in to save preferences between visits. Your current search is already updated.");
+        var valid = HomeMatcher.Validate(value); if (!valid.Success) return valid;
+        var id = await UserId(); if (id is null) return OperationResult.Fail("Sign in to keep your plan on every device. It is already saved in this browser.");
         await using var db = await factory.CreateDbContextAsync();
         var profile = await db.Profiles.FindAsync(id);
         if (profile is null) { profile = new() { UserId = id }; db.Profiles.Add(profile); }
         profile.PreferencesJson = JsonSerializer.Serialize(value);
-        await db.SaveChangesAsync(); return OperationResult.Ok("Preferences saved");
+        await db.SaveChangesAsync(); return OperationResult.Ok("Plan saved to your profile");
     }
     public async Task<List<ReviewEntity>> Reviews(int complexId = 0, bool admin = false)
     {

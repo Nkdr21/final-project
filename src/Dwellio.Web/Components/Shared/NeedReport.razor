@@ -1,0 +1,32 @@
+@* What daily life looks like around one point: nearest place per need, on foot. *@
+@if (Report.Needs.IsEmpty)
+{
+    <p class="muted">Choose what you want nearby in the planner to see it here.</p>
+}
+else
+{
+    <div>
+    <ul class="need-list">
+        @foreach (var need in Report.Needs)
+        {
+            var ok = need.Satisfied(Report.WalkLimit);
+            <li>
+                <span class="emoji" aria-hidden="true">@need.Category.Icon</span>
+                <span>
+                    <strong>@need.Category.Label @if (need.Required) { <span class="tag info">must</span> }</strong>
+                    <small class="muted">@(need.Nearest is null ? "None found in OpenStreetMap within " + 2 * Report.WalkLimit + " min" : need.Nearest.DisplayName + (need.CountWithinLimit > 1 ? $" · {need.CountWithinLimit} options within {Report.WalkLimit} min" : ""))</small>
+                </span>
+                <span class="tag @(ok ? "good" : need.WalkMinutes is null ? "bad" : "warn")">@(need.WalkMinutes is { } m ? $"{m} min" : "—")</span>
+            </li>
+        }
+        <li>
+            <span class="emoji" aria-hidden="true">🚌</span>
+            <span><strong>Bus stop</strong><small class="muted">@(Report.NearestStop?.DisplayName ?? "None found nearby") @(Report.BusStopsWithinLimit > 1 ? $"· {Report.BusStopsWithinLimit} stops within {Report.WalkLimit} min" : "")</small></span>
+            <span class="tag @(Report.StopWalkMinutes <= Report.WalkLimit ? "good" : "warn")">@(Report.StopWalkMinutes is { } s ? $"{s} min" : "—")</span>
+        </li>
+    </ul>
+    <p class="note" style="margin-top:8px">Walking times are estimates: straight-line distance × @GeoMath.DetourFactor.ToString(System.Globalization.CultureInfo.InvariantCulture) for streets at @((int)GeoMath.WalkMetersPerMinute) m/min.</p>
+    </div>
+}
+
+@code { [Parameter, EditorRequired] public AreaReport Report { get; set; } = default!; }

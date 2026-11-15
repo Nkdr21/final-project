@@ -1,0 +1,34 @@
+<article class="home-card @(Result.Match.Eligible ? "" : "excluded")">
+    <ListingPhoto Url="@Result.Listing.Photo" Alt="@($"Photo of {Result.Listing.Title}")">
+        <KindTag Kind="Result.Listing.Kind" />
+        @if (Result.Match.Eligible) { <ScoreBadge Score="Result.Match.Score" /> }
+    </ListingPhoto>
+    <div class="body">
+        <div class="spread">
+            <div class="price">@Labels.Money(Result.Listing.Rent)<small> / month</small></div>
+            <button type="button" class="icon-button" aria-pressed="@(Selected ? "true" : "false")"
+                    aria-label="@(Selected ? "Remove from comparison" : "Add to comparison")" title="Compare"
+                    @onclick="() => OnCompare.InvokeAsync(Result.Listing.Id)">⚖️</button>
+        </div>
+        <a class="title" href="/homes/@Result.Listing.Id">@Result.Listing.Title</a>
+        <span class="muted" style="font-size:13px">@Result.Complex.Name · @Result.Listing.Rooms room@(Result.Listing.Rooms > 1 ? "s" : "") · @Result.Listing.Area m²@(Result.Listing.Furnished ? " · furnished" : "")</span>
+        <CommuteSummary Plan="Result.Match.Commute" />
+        <div class="tags">
+            @foreach (var need in Result.Match.Area.Needs)
+            {
+                var ok = need.Satisfied(Result.Match.Area.WalkLimit);
+                <span class="tag @(ok ? "good" : "")" title="@need.Category.Label: @(need.WalkMinutes is { } m ? $"{m} min walk" : "not found nearby")">@need.Category.Icon @(need.WalkMinutes is { } w ? $"{w}′" : "—")</span>
+            }
+        </div>
+        @if (!Result.Match.Eligible)
+        {
+            <ul class="why">@foreach (var reason in Result.Match.Exclusions.Take(2)) { <li class="no">@reason</li> }</ul>
+        }
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public HomeResult Result { get; set; } = default!;
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public EventCallback<int> OnCompare { get; set; }
+}

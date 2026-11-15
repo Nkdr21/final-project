@@ -1,0 +1,65 @@
+@typeparam TItem
+
+@* Generic, dependency-free SVG bar chart. The caller supplies functions that read a value, a
+   label and an optional highlight from any item type; an accessible table mirrors the bars. *@
+<figure class="chart">
+    <svg viewBox="0 0 @Width @Height" role="img" aria-label="@Title">
+        <title>@Title</title>
+        @for (var i = 0; i < Items.Count; i++)
+        {
+            var item = Items[i];
+            var value = Value(item);
+            var h = Scale(value);
+            var x = Pad + i * Step;
+            var over = Threshold is { } t && value > t;
+            var css = $"bar{(over ? " over" : "")}{(Highlight?.Invoke(item) == true ? " hl" : "")}";
+            <rect class="@css" x="@F(x + 1)" y="@F(Top + Plot - h)" width="@F(Math.Max(1, Step - 2))" height="@F(h)" rx="2">
+                <title>@Label(item): @Format(value)</title>
+            </rect>
+            @if (i % LabelEvery == 0)
+            {
+                @SvgText(x + Step / 2, Top + Plot + 12, Short(Label(item)), "end", -40)
+            }
+        }
+        @if (Threshold is { } threshold)
+        {
+            <line class="threshold" x1="@Pad" x2="@(Width - 4)" y1="@F(Top + Plot - Scale(threshold))" y2="@F(Top + Plot - Scale(threshold))" />
+            @SvgText(Width - 6, Top + Plot - Scale(threshold) - 4, ThresholdLabel, "end")
+        }
+    </svg>
+    @if (Legend is not null) { <figcaption class="legend">@Legend</figcaption> }
+    <details class="more">
+        <summary>Show as table</summary>
+        <table class="table table-sm">
+            <thead><tr><th scope="col">@LabelHeader</th><th scope="col">@ValueHeader</th></tr></thead>
+            <tbody>@foreach (var item in Items) { <tr><td>@Label(item)</td><td>@Format(Value(item))</td></tr> }</tbody>
+        </table>
+    </details>
+</figure>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = [];
+    [Parameter, EditorRequired] public Func<TItem, double> Value { get; set; } = _ => 0;
+    [Parameter, EditorRequired] public Func<TItem, string> Label { get; set; } = _ => "";
+    [Parameter] public Func<TItem, bool>? Highlight { get; set; }
+    [Parameter] public Func<double, string> Format { get; set; } = v => v.ToString("0");
+    [Parameter] public double? Threshold { get; set; }
+    [Parameter] public string ThresholdLabel { get; set; } = "";
+    [Parameter] public double? Max { get; set; }
+    [Parameter] public string Title { get; set; } = "Chart";
+    [Parameter] public string LabelHeader { get; set; } = "Item";
+    [Parameter] public string ValueHeader { get; set; } = "Value";
+    [Parameter] public RenderFragment? Legend { get; set; }
+
+    private const double Width = 760, Height = 260, Pad = 8, Top = 14, Plot = 150;
+    private double Step => Items.Count == 0 ? 0 : (Width - Pad - 8) / Items.Count;
+    private int LabelEvery => Math.Max(1, (int)Math.Ceiling(Items.Count / 22.0));
+    private double Peak => Math.Max(1, Max ?? Math.Max(Items.Count == 0 ? 0 : Items.Max(Value), Threshold ?? 0) * 1.1);
+    private double Scale(double v) => Math.Clamp(v / Peak, 0, 1) * Plot;
+    private static string F(double v) => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+    // Razor reserves <text>, so SVG labels are emitted as encoded markup.
+    private static MarkupString SvgText(double x, double y, string content, string anchor, double rotate = 0) => new(
+        $"<text x=\"{F(x)}\" y=\"{F(y)}\" text-anchor=\"{anchor}\"{(rotate != 0 ? $" transform=\"rotate({F(rotate)} {F(x)} {F(y)})\"" : "")}>{System.Net.WebUtility.HtmlEncode(content)}</text>");
+
+    private static string Short(string s) => s.Length > 16 ? s[..15] + "…" : s;
+}

@@ -1,0 +1,11 @@
+<div class="seat" title="Estimated from GPS dwell times — a model, not a live count">
+    <div class="label"><span>💺 @Labels.SeatWord(Chance)</span><span>@Labels.Percent(Chance)</span></div>
+    <div class="meter @Tone" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@((int)Math.Round(Chance * 100))" aria-label="Estimated chance of a seat">
+        <span style="width:@((int)Math.Round(Chance * 100))%"></span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public double Chance { get; set; }
+    private string Tone => Chance >= 0.6 ? "" : Chance >= 0.3 ? "warn" : "bad";
+}

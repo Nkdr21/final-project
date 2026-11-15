@@ -1,0 +1,17 @@
+@typeparam TValue
+
+@* Generic segmented control: works for enums, numbers or strings. *@
+<div class="segmented" role="group" aria-label="@Label">
+    @foreach (var option in Options)
+    {
+        <button type="button" aria-pressed="@(EqualityComparer<TValue>.Default.Equals(option.Value, Value) ? "true" : "false")"
+                @onclick="() => ValueChanged.InvokeAsync(option.Value)">@option.Text</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<(TValue Value, string Text)> Options { get; set; } = [];
+    [Parameter] public TValue Value { get; set; } = default!;
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+}

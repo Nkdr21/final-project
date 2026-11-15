@@ -1,6 +1,36 @@
 @page "/owner"
 @attribute [Authorize]
 @inject HousingService Housing
-<PageTitle>Dashboard — Dwellio</PageTitle>
-<div class="shell section"><h1>My dashboard</h1><AuthorizeView Roles="Owner,Admin"><Authorized><div class="section-heading"><h2>My listings</h2><a class="button" href="/owner/edit/0">Add listing +</a></div>@if(items.Count==0){<p class="empty">No listings yet. Create your first one.</p>}@foreach(var item in items){<div class="management-row"><div><strong>@item.Title</strong><p>@Labels.Money(item.Rent) · @(item.Available?"Active":"Unavailable") @(item.Hidden?"· Hidden by moderator":"")</p></div><a class="button secondary" href="/owner/edit/@item.Id">Edit</a></div>}</Authorized><NotAuthorized><p>You have a student account. Set your preferences or explore saved homes.</p><a href="/preferences" class="button">My preferences</a><a href="/favorites" class="button secondary">Saved homes</a></NotAuthorized></AuthorizeView></div>
-@code{List<ListingEntity> items=[];protected override async Task OnInitializedAsync()=>items=await Housing.Listings(own:true);}
+
+<PageTitle>My listings — Dwellio</PageTitle>
+
+<div class="shell page narrow">
+    <AuthorizeView Roles="Owner,Admin">
+        <Authorized>
+            <div class="spread"><h1 style="margin:0">My listings</h1><a class="button" href="/owner/edit/0">+ New listing</a></div>
+            @if (items.Count == 0)
+            {
+                <EmptyState Emoji="🔑" Title="No listings yet"><p class="muted">Publish your first home — Dwellio will show renters its everyday places and commute automatically.</p><a class="button" href="/owner/edit/0">Create listing</a></EmptyState>
+            }
+            <div class="panel section">
+                @foreach (var item in items)
+                {
+                    <div class="manage-row">
+                        <div><strong>@item.Title</strong><div class="inline" style="gap:6px"><span class="muted">@Labels.Money(item.Rent)</span><span class="tag @(item.Available ? "good" : "")">@(item.Available ? "Active" : "Inactive")</span>@if (item.Hidden) { <span class="tag bad">Hidden by moderator</span> }</div></div>
+                        <div class="inline"><a class="button small ghost" href="/homes/@item.Id">View</a><a class="button small" href="/owner/edit/@item.Id">Edit</a></div>
+                    </div>
+                }
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <h1>My account</h1>
+            <p class="muted">You have a student account. Plan your move and save homes you like.</p>
+            <div class="inline"><a href="/plan" class="button">Open planner</a><a href="/favorites" class="button ghost">Saved homes</a></div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private List<ListingEntity> items = [];
+    protected override async Task OnInitializedAsync() => items = await Housing.Listings(own: true);
+}

@@ -1,0 +1,10 @@
+<div class="empty">
+    <span class="emoji" aria-hidden="true">@Emoji</span>
+    <h2>@Title</h2>
+    @ChildContent
+</div>
+@code {
+    [Parameter] public string Emoji { get; set; } = "🔍";
+    [Parameter] public string Title { get; set; } = "Nothing here yet";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

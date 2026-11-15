@@ -1,0 +1,27 @@
+@* One line that summarises any kind of commute plan (pattern matching over the plan cases). *@
+<div class="commute-mini">
+    @switch (Plan)
+    {
+        case TransitPlan t:
+            <span class="tag info">🚌 Bus @t.Best.Route.Ref</span>
+            <strong>@Labels.Minutes(t.Best.TotalMinutes)</strong>
+            <span class="tag @SeatTone(t.Best.SeatChance)">💺 @Labels.Percent(t.Best.SeatChance)</span>
+            break;
+        case WalkPlan w:
+            <span class="tag good">🚶 Walk</span><strong>@Labels.Minutes(w.Minutes)</strong>
+            break;
+        case EstimatedBusPlan e:
+            <span class="tag warn">🚌 ≈ @Labels.Minutes(e.TotalMinutes)</span><span class="muted">estimate</span>
+            break;
+        case NoCommute:
+            <span class="tag bad">No bus nearby</span>
+            break;
+    }
+    @if (!string.IsNullOrEmpty(Destination)) { <span class="muted">to @Destination</span> }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CommutePlan Plan { get; set; } = default!;
+    [Parameter] public string? Destination { get; set; }
+    public static string SeatTone(double chance) => chance >= 0.6 ? "good" : chance >= 0.3 ? "warn" : "bad";
+}

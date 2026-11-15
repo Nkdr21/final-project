@@ -1,0 +1,67 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* Reusable Leaflet map. Parent components pass immutable MapData; the map only redraws when a
+   new MapData instance arrives, so unrelated re-renders cost nothing. *@
+<div class="map-shell">
+    <div class="map @(Tall ? "tall" : "")" @ref="element" role="region" aria-label="@Label"></div>
+    <div class="tiles-note callout warn">Map tiles are not loading. Everything on the map is also listed on this page.</div>
+    @if (Caption is not null) { <div class="map-caption">@Caption</div> }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public GeoPoint Center { get; set; }
+    [Parameter] public int Zoom { get; set; } = 14;
+    [Parameter] public MapData? Data { get; set; }
+    [Parameter] public bool Clickable { get; set; }
+    [Parameter] public bool Tall { get; set; }
+    [Parameter] public string Label { get; set; } = "Map";
+    [Parameter] public RenderFragment? Caption { get; set; }
+    [Parameter] public EventCallback<GeoPoint> OnMapClick { get; set; }
+    [Parameter] public EventCallback<string> OnMarkerClick { get; set; }
+
+    private ElementReference element;
+    private IJSObjectReference? module;
+    private DotNetObjectReference<LiveMap>? self;
+    private bool ready;
+    private MapData? drawn;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            if (firstRender)
+            {
+                module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/map.js");
+                self = DotNetObjectReference.Create(this);
+                ready = await module.InvokeAsync<bool>("create", element, self,
+                    new { lat = Center.Lat, lon = Center.Lon, zoom = Zoom, clickable = Clickable });
+            }
+            if (ready && module is not null && !ReferenceEquals(Data, drawn))
+            {
+                drawn = Data;
+                await module.InvokeVoidAsync("update", element, Data ?? MapData.Empty);
+            }
+        }
+        catch (JSException) { ready = false; } // map is optional; the page lists everything anyway
+        catch (JSDisconnectedException) { }
+    }
+
+    [JSInvokable("OnMapClick")] public Task MapClicked(double lat, double lon) => OnMapClick.InvokeAsync(new GeoPoint(lat, lon));
+    [JSInvokable("OnMarkerClick")] public Task MarkerClicked(string id) => OnMarkerClick.InvokeAsync(id);
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("dispose", element);
+                await module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException) { }
+        self?.Dispose();
+    }
+}

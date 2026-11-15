@@ -1,0 +1,360 @@
+@page "/plan"
+@page "/catalog"
+@page "/preferences"
+@page "/complexes"
+@page "/market"
+@implements IDisposable
+@inject HomeFinder Finder
+@inject PlaceService Places
+@inject NavigationManager Nav
+
+<PageTitle>Plan my move — Dwellio</PageTitle>
+
+<div class="shell page">
+    <div class="plan-layout">
+        @* ---------- Left: the plan (inputs). Every change updates results immediately. ---------- *@
+        <div>
+            <div class="panel-toggle spread" style="margin-bottom:12px">
+                <div class="plan-summary">
+                    <span class="tag info">🎯 @Plan.DestinationName</span>
+                    <span class="tag">≤ @Labels.Money(Plan.Budget)</span>
+                    <span class="tag">@Plan.AllNeeds.Length needs · @Plan.WalkLimit′</span>
+                </div>
+                <button class="button small ghost" aria-expanded="@(panelOpen ? "true" : "false")" aria-controls="plan-panel" @onclick="() => panelOpen = !panelOpen">@(panelOpen ? "Hide plan" : "✏️ Edit plan")</button>
+            </div>
+
+            <section id="plan-panel" class="panel plan-panel" hidden="@(!panelOpen)" aria-label="Your plan">
+                <div class="plan-step">
+                    <h2><span class="num">1</span>Where do you go every day?</h2>
+                    <div class="chosen-place" style="margin-bottom:10px">
+                        <span aria-hidden="true">🎯</span>
+                        <span>@Plan.DestinationName</span>
+                    </div>
+                    <PlaceSearch Label="Change your work or study place" Placeholder="Change: university, office, address…" OnSelected="SetDestination" />
+                </div>
+
+                <div class="plan-step">
+                    <h2><span class="num">2</span>What do you want nearby?</h2>
+                    <NeedPicker Needs="Plan.Needs" MustHaves="Plan.MustHaves" Changed="SetNeeds" />
+                    <label class="field" style="margin-top:12px">
+                        <span class="spread"><span>Walking distance</span><span class="tag info">up to @Plan.WalkLimit min</span></span>
+                        <input type="range" min="5" max="20" step="1" value="@Plan.WalkLimit" @onchange="@(e => Change(p => p with { WalkLimit = Int(e, p.WalkLimit) }))" aria-label="Maximum walking minutes" />
+                    </label>
+                </div>
+
+                <div class="plan-step">
+                    <h2><span class="num">3</span>Getting there</h2>
+                    <div class="stack">
+                        <div class="form-grid">
+                            <label class="field">Arrive by
+                                <select value="@Plan.ArriveByHour" @onchange="@(e => Change(p => p with { ArriveByHour = Int(e, p.ArriveByHour) }))">
+                                    @for (var h = 7; h <= 22; h++) { <option value="@h">@Labels.Hour(h)</option> }
+                                </select>
+                            </label>
+                            <label class="field">Longest commute
+                                <select value="@Plan.MaxCommuteMinutes" @onchange="@(e => Change(p => p with { MaxCommuteMinutes = Int(e, p.MaxCommuteMinutes) }))">
+                                    @foreach (var m in new[] { 15, 20, 30, 40, 45, 60, 75, 90 }) { <option value="@m">@m min</option> }
+                                </select>
+                            </label>
+                        </div>
+                        <div class="field">On the bus I prefer
+                            <Segmented TValue="CommutePriority" Label="Commute priority" Value="Plan.Priority"
+                                       ValueChanged="@(v => Change(p => p with { Priority = v }))" Options="PriorityOptions" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="plan-step">
+                    <h2><span class="num">4</span>Budget &amp; home</h2>
+                    <div class="form-grid">
+                        <label class="field">Max rent, ₸ / month
+                            <input type="number" min="10000" step="10000" inputmode="numeric" value="@Plan.Budget" @onchange="@(e => Change(p => p with { Budget = Dec(e, p.Budget) }))" />
+                        </label>
+                        <div class="field">Rooms (at least)
+                            <Segmented TValue="int" Label="Minimum rooms" Value="Plan.MinRooms" ValueChanged="@(v => Change(p => p with { MinRooms = v }))" Options="RoomOptions" />
+                        </div>
+                    </div>
+                    <label class="check" style="margin-top:12px"><input type="checkbox" checked="@Plan.FurnishedOnly" @onchange="@(e => Change(p => p with { FurnishedOnly = e.Value is true }))" /> Furnished only</label>
+                    <details class="more" style="margin-top:10px">
+                        <summary>Fine-tune the score</summary>
+                        <div class="stack">
+                            <label class="field"><span class="spread">Price matters <span>@Plan.PriceWeight / 5</span></span><input type="range" min="0" max="5" value="@Plan.PriceWeight" @onchange="@(e => Change(p => p with { PriceWeight = Int(e, p.PriceWeight) }))" /></label>
+                            <label class="field"><span class="spread">Neighbourhood matters <span>@Plan.LifestyleWeight / 5</span></span><input type="range" min="0" max="5" value="@Plan.LifestyleWeight" @onchange="@(e => Change(p => p with { LifestyleWeight = Int(e, p.LifestyleWeight) }))" /></label>
+                            <label class="field"><span class="spread">Commute matters <span>@Plan.CommuteWeight / 5</span></span><input type="range" min="0" max="5" value="@Plan.CommuteWeight" @onchange="@(e => Change(p => p with { CommuteWeight = Int(e, p.CommuteWeight) }))" /></label>
+                            <div class="form-grid">
+                                <label class="field">Bus fares, ₸ / month<input type="number" min="0" step="500" value="@Plan.TransportCost" @onchange="@(e => Change(p => p with { TransportCost = Dec(e, p.TransportCost) }))" /></label>
+                                <label class="field">Gym membership, ₸ / month<input type="number" min="0" step="1000" value="@Plan.GymCost" @onchange="@(e => Change(p => p with { GymCost = Dec(e, p.GymCost) }))" /></label>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="plan-step">
+                    <p role="status" class="status @(statusError ? "error" : "")">@status</p>
+                    <AuthorizeView>
+                        <Authorized><button class="button ghost block" @onclick="SaveProfile">💾 Save plan to my profile</button></Authorized>
+                        <NotAuthorized><p class="note" style="margin:0">Your plan is saved in this browser. <a href="/Account/Login">Sign in</a> to keep it on every device.</p></NotAuthorized>
+                    </AuthorizeView>
+                </div>
+            </section>
+        </div>
+
+        @* ---------- Right: results ---------- *@
+        <section aria-labelledby="results-title">
+            <div class="results-head">
+                <div>
+                    <span class="eyebrow">Your plan · @Plan.DestinationName</span>
+                    <h1 id="results-title">
+                        @if (tab == ResultTab.Homes) { @(eligible.Length == 1 ? "1 home fits" : $"{eligible.Length} homes fit") }
+                        else { @("Best areas to live") }
+                    </h1>
+                </div>
+                <Segmented TValue="ResultTab" Label="Show" Value="tab" ValueChanged="SwitchTab" Options="TabOptions" />
+            </div>
+
+            @if (State.IsFirstVisit)
+            {
+                <div class="callout" style="margin-bottom:14px">👋 This is a starting plan for a student at Astana IT University. Change the destination and needs on the left — results update instantly.</div>
+            }
+
+            <LiveMap Center="Plan.Destination" Zoom="13" Data="mapData" Tall Clickable="tab == ResultTab.Areas"
+                     Label="Map of your destination and results" OnMarkerClick="MarkerClicked" OnMapClick="MapClicked">
+                <Caption>
+                    <span class="tag @(freshness?.Live == true ? "good" : "")" title="@freshness?.Label">@(freshness?.Live == true ? $"● Live OpenStreetMap · {freshness.AsOfUtc.ToLocalTime():HH:mm}" : $"◌ OpenStreetMap snapshot · {freshness?.AsOfUtc:dd.MM.yyyy}")</span>
+                    @if (refreshing) { <span class="tag"><span class="spinner" aria-hidden="true"></span> checking OpenStreetMap…</span> }
+                    @if (tab == ResultTab.Areas) { <span class="tag">Tap the map to check any spot</span> }
+                </Caption>
+            </LiveMap>
+
+            <div aria-live="polite" class="sr-only">@(busy ? "Updating results" : $"{eligible.Length} homes fit your plan")</div>
+
+            <div class="section" style="margin-top:18px">
+                @if (busy && homes.IsDefaultOrEmpty)
+                {
+                    <div class="grid-3">@for (var i = 0; i < 3; i++) { <div class="skeleton" style="height:320px"></div> }</div>
+                }
+                else if (tab == ResultTab.Homes)
+                {
+                    @if (eligible.IsEmpty)
+                    {
+                        <EmptyState Emoji="🏙️" Title="No home fits every requirement yet">
+                            <p class="muted">Try a higher budget, a longer commute or turn a must-have into a want. Below you can see exactly what each home misses.</p>
+                        </EmptyState>
+                    }
+                    <div class="grid-3">
+                        @foreach (var home in eligible)
+                        {
+                            <HomeCard @key="home.Listing.Id" Result="home" Selected="State.CompareIds.Contains(home.Listing.Id)" OnCompare="Compare" />
+                        }
+                    </div>
+                    @if (!excluded.IsEmpty)
+                    {
+                        <details class="more section">
+                            <summary>@excluded.Length home@(excluded.Length == 1 ? "" : "s") don't fit — see why</summary>
+                            <div class="grid-3">
+                                @foreach (var home in excluded)
+                                {
+                                    <HomeCard @key="home.Listing.Id" Result="home" Selected="State.CompareIds.Contains(home.Listing.Id)" OnCompare="Compare" />
+                                }
+                            </div>
+                        </details>
+                    }
+                    <p class="note section">Prices: ✔ real listings link to krisha.kz; “sample price” homes are real buildings with illustrative rent. Places from OpenStreetMap; bus times from open GPS data.</p>
+                }
+                else
+                {
+                    @if (areasBusy || busy) { <div class="grid-3">@for (var i = 0; i < 3; i++) { <div class="skeleton" style="height:190px"></div> }</div> }
+                    else if (areas.IsDefaultOrEmpty)
+                    {
+                        <EmptyState Emoji="🗺️" Title="No area meets every must-have">
+                            <p class="muted">Increase the walking distance or the commute limit, or remove a must-have.</p>
+                        </EmptyState>
+                    }
+                    else
+                    {
+                        <p class="muted">Spots within @Plan.MaxCommuteMinutes min of @Plan.DestinationName where most of your needs are a short walk away — whether or not there is a listing yet.</p>
+                        <div class="grid-3">
+                            @foreach (var (area, i) in areas.Select((a, i) => (a, i)))
+                            {
+                                <AreaCard @key="area.Location" Area="area" Rank="i + 1" Selected="selectedArea == area" OnSelect="SelectArea" />
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            <p role="status" class="status">@compareMessage</p>
+        </section>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public PlannerState State { get; set; } = default!;
+    [CascadingParameter] public Preferences Plan { get; set; } = default!;
+
+    private enum ResultTab { Homes, Areas }
+    private static readonly IReadOnlyList<(ResultTab, string)> TabOptions = [(ResultTab.Homes, "🏠 Homes"), (ResultTab.Areas, "⭐ Areas")];
+    private static readonly IReadOnlyList<(CommutePriority, string)> PriorityOptions =
+        [(CommutePriority.Seat, "💺 A seat"), (CommutePriority.Balanced, "⚖️ Balanced"), (CommutePriority.Fastest, "⚡ Fastest")];
+    private static readonly IReadOnlyList<(int, string)> RoomOptions = [(1, "1+"), (2, "2+"), (3, "3+"), (4, "4+")];
+
+    private ResultTab tab = ResultTab.Homes;
+    private bool panelOpen = true, busy = true, areasBusy, refreshing, statusError;
+    private string status = "", compareMessage = "", computedKey = "";
+    private ImmutableArray<HomeResult> homes = [];
+    private ImmutableArray<HomeResult> eligible = [], excluded = [];
+    private ImmutableArray<AreaCandidate> areas = [];
+    private AreaCandidate? selectedArea;
+    private MapData mapData = MapData.Empty;
+    private Freshness? freshness;
+    private CancellationTokenSource? run, areasRun; // separate: switching tabs must not cancel the homes computation
+
+    protected override void OnInitialized()
+    {
+        panelOpen = State.IsFirstVisit;
+        Places.AreaRefreshed += OnAreaRefreshed;
+    }
+
+    // The cascading Preferences change whenever the plan changes anywhere: recompute then.
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Plan.CacheKey == computedKey) return;
+        computedKey = Plan.CacheKey;
+        await RecomputeAsync();
+        _ = RefreshLiveAsync();
+    }
+
+    private async Task RecomputeAsync()
+    {
+        run?.Cancel();
+        run = new CancellationTokenSource();
+        var token = run.Token;
+        busy = true;
+        areas = []; // areas belong to the previous plan; recomputed when the Areas tab is shown
+        try
+        {
+            var plan = Plan;
+            var result = await Finder.RankAsync(plan, token);
+            if (token.IsCancellationRequested) return;
+            homes = result;
+            eligible = homes.Where(h => h.Match.Eligible).ToImmutableArray();
+            excluded = homes.Where(h => !h.Match.Eligible).ToImmutableArray();
+            freshness = Places.FreshnessAt(plan.Destination);
+            BuildMap();
+        }
+        catch (OperationCanceledException) { }
+        finally { if (!token.IsCancellationRequested) busy = false; }
+        if (!token.IsCancellationRequested && tab == ResultTab.Areas) await LoadAreasAsync();
+    }
+
+    /// <summary>Computes best areas for the current plan; a newer request cancels an older one.</summary>
+    private async Task LoadAreasAsync()
+    {
+        areasRun?.Cancel();
+        areasRun = new CancellationTokenSource();
+        var token = areasRun.Token;
+        areasBusy = true;
+        StateHasChanged();
+        try
+        {
+            var result = await Finder.AreasAsync(Plan, token);
+            if (token.IsCancellationRequested) return;
+            areas = result;
+            selectedArea = areas.FirstOrDefault();
+            BuildMap();
+        }
+        catch (OperationCanceledException) { }
+        finally { if (!token.IsCancellationRequested) areasBusy = false; }
+    }
+
+    /// <summary>Asks OpenStreetMap for fresher data around the destination without blocking the page.</summary>
+    private async Task RefreshLiveAsync()
+    {
+        var task = Places.RefreshAsync(Plan.Destination);
+        if (task.IsCompleted) return;
+        refreshing = true;
+        StateHasChanged();
+        try { await task; }
+        finally { refreshing = false; freshness = Places.FreshnessAt(Plan.Destination); await InvokeAsync(StateHasChanged); }
+    }
+
+    private void OnAreaRefreshed(GeoPoint centre) => _ = InvokeAsync(async () =>
+    {
+        if (GeoMath.Meters(centre, Plan.Destination) > 3000) return;
+        await RecomputeAsync();
+        StateHasChanged();
+    });
+
+    private void BuildMap()
+    {
+        var markers = new List<MapMarker> { new(Plan.DestinationLat, Plan.DestinationLon, "destination", Plan.DestinationName, "Your daily destination", Emphasis: true) };
+        if (tab == ResultTab.Homes)
+        {
+            markers.AddRange(eligible.DistinctBy(h => h.Complex.Id).Select(h => new MapMarker(h.Complex.Latitude, h.Complex.Longitude, "home",
+                h.Complex.Name, $"{eligible.Count(x => x.Complex.Id == h.Complex.Id)} home(s) from {Labels.Money(eligible.Where(x => x.Complex.Id == h.Complex.Id).Min(x => x.Listing.Rent))}", $"home:{h.Listing.Id}", true)));
+            mapData = new(markers);
+        }
+        else
+        {
+            var circles = areas.Select((a, i) => new MapCircle(a.Location.Lat, a.Location.Lon, GeoMath.WalkRadiusMeters(Plan.WalkLimit),
+                $"#{i + 1} {a.Label} · {a.Score}", $"area:{i}", a == selectedArea ? "#4f46e5" : "#9aa0c8")).ToList();
+            if (selectedArea is not null)
+            {
+                markers.AddRange(selectedArea.Report.Needs.Where(n => n.Nearest is not null).Select(n =>
+                    new MapMarker(n.Nearest!.Location.Lat, n.Nearest.Location.Lon, n.Category.Key, n.Nearest.DisplayName, $"{n.Category.Label} · {n.WalkMinutes} min walk")));
+                if (selectedArea.Report.NearestStop is { } stop)
+                    markers.Add(new(stop.Location.Lat, stop.Location.Lon, "bus_stop", stop.DisplayName, "Nearest bus stop"));
+            }
+            mapData = new(markers, circles);
+        }
+    }
+
+    // ---- Input handlers: each is a pure transformation of the plan. ----
+
+    private async Task Change(Func<Preferences, Preferences> change)
+    {
+        var result = await State.Update(change);
+        (status, statusError) = result.Success ? ("", false) : (result.Message, true);
+    }
+
+    private Task SetDestination(Suggestion s) => Change(p => p with { DestinationName = s.Name, DestinationLat = s.Location.Lat, DestinationLon = s.Location.Lon });
+    private Task SetNeeds((ImmutableArray<string> Needs, ImmutableArray<string> MustHaves) v) => Change(p => p with { Needs = v.Needs, MustHaves = v.MustHaves });
+
+    private static int Int(ChangeEventArgs e, int fallback) => int.TryParse(e.Value?.ToString(), out var v) ? v : fallback;
+    private static decimal Dec(ChangeEventArgs e, decimal fallback) =>
+        decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : fallback;
+
+    private async Task SwitchTab(ResultTab next)
+    {
+        tab = next;
+        BuildMap();
+        if (tab == ResultTab.Areas && areas.IsDefaultOrEmpty && !busy) await LoadAreasAsync();
+    }
+
+    private void SelectArea(AreaCandidate area) { selectedArea = area; BuildMap(); }
+
+    private void MarkerClicked(string id)
+    {
+        if (id.StartsWith("home:")) Nav.NavigateTo($"/homes/{id[5..]}");
+        else if (id.StartsWith("area:") && int.TryParse(id[5..], out var i) && i < areas.Length) SelectArea(areas[i]);
+    }
+
+    private void MapClicked(GeoPoint point) =>
+        Nav.NavigateTo(FormattableString.Invariant($"/area?lat={point.Lat:F5}&lon={point.Lon:F5}"));
+
+    private async Task Compare(int id) => compareMessage = (await State.ToggleCompareAsync(id)).Message;
+
+    private async Task SaveProfile()
+    {
+        var result = await State.SaveToProfileAsync();
+        (status, statusError) = (result.Message, !result.Success);
+    }
+
+    public void Dispose()
+    {
+        Places.AreaRefreshed -= OnAreaRefreshed;
+        run?.Cancel();
+        run?.Dispose();
+        areasRun?.Cancel();
+        areasRun?.Dispose();
+    }
+}

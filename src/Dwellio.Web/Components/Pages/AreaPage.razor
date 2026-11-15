@@ -1,0 +1,88 @@
+@page "/area"
+@inject HomeFinder Finder
+@inject TransitService Transit
+@inject PlaceService Places
+
+<PageTitle>@Title — Dwellio</PageTitle>
+
+<div class="shell page">
+    <a href="/plan">← Back to my plan</a>
+    @if (!valid)
+    {
+        <EmptyState Emoji="🧭" Title="Pick a spot in Astana">
+            <p class="muted">This link has no valid location. Open the planner and tap the map on the “Areas” tab.</p>
+            <a class="button" href="/plan">Open planner</a>
+        </EmptyState>
+    }
+    else if (report is null || commute is null)
+    {
+        <div class="skeleton" style="height:48px;width:40%;margin:16px 0"></div>
+        <div class="skeleton" style="height:360px"></div>
+    }
+    else
+    {
+        <div class="spread" style="margin:14px 0 18px">
+            <div>
+                <span class="eyebrow">Area check</span>
+                <h1 style="margin:0">@Title</h1>
+                <p class="muted" style="margin:4px 0 0">@point.ToString() · @(Places.FreshnessAt(point).Live ? "live OpenStreetMap data" : "OpenStreetMap snapshot")</p>
+            </div>
+            <ScoreBadge Score="AreaSearch.Score(report, commute, Plan)" />
+        </div>
+        <div class="grid-2">
+            <div class="stack">
+                <h2>Within @Plan.WalkLimit min on foot</h2>
+                <NeedReport Report="report" />
+            </div>
+            <LiveMap Center="point" Zoom="15" Data="mapData" Tall Label="Places around this spot" />
+        </div>
+        <section class="section">
+            <h2>Getting to @Plan.DestinationName</h2>
+            <JourneyOptions Plan="commute" Destination="@Plan.DestinationName" Priority="Plan.Priority" />
+        </section>
+        <section class="section">
+            <h2>Everything nearby</h2>
+            <p class="muted">All places in your categories within @Plan.WalkLimit min — @around.Length found.</p>
+            <div class="tags">
+                @foreach (var group in around.GroupBy(p => p.Category).OrderByDescending(g => g.Count()))
+                {
+                    <span class="tag">@PlaceCatalog.Icon(group.Key) @PlaceCatalog.Label(group.Key): @group.Count()</span>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public Preferences Plan { get; set; } = default!;
+    // Strings, parsed safely: a hand-edited link must show a friendly message, not crash.
+    [SupplyParameterFromQuery] public string? Lat { get; set; }
+    [SupplyParameterFromQuery] public string? Lon { get; set; }
+    [SupplyParameterFromQuery] public string? Name { get; set; }
+
+    private GeoPoint point;
+    private bool valid;
+    private AreaReport? report;
+    private CommutePlan? commute;
+    private ImmutableArray<Place> around = [];
+    private MapData mapData = MapData.Empty;
+    private string loadedKey = "";
+    private string Title => string.IsNullOrWhiteSpace(Name) ? "Selected spot" : Name;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Query.Point(Lat, Lon) is not { } parsed) { valid = false; return; }
+        (valid, point) = (true, parsed);
+        var key = $"{point}|{Plan.CacheKey}";
+        if (key == loadedKey) return;
+        loadedKey = key;
+        report = await Finder.AnalyseAsync(point, Plan);
+        commute = await Transit.PlanAsync(Plan.ToJourney(point));
+        around = await Finder.PlacesAroundAsync(point, Plan.AllNeeds, Plan.WalkLimit);
+        var markers = new List<MapMarker> { new(point.Lat, point.Lon, "area", Title, Emphasis: true) };
+        markers.AddRange(around.Select(p => new MapMarker(p.Location.Lat, p.Location.Lon, p.Category, p.DisplayName, PlaceCatalog.Label(p.Category))));
+        if (report.NearestStop is { } stop) markers.Add(new(stop.Location.Lat, stop.Location.Lon, "bus_stop", stop.DisplayName, "Nearest bus stop"));
+        mapData = new(markers, [new MapCircle(point.Lat, point.Lon, GeoMath.WalkRadiusMeters(Plan.WalkLimit), $"{Plan.WalkLimit} min walk")]);
+        _ = Places.RefreshAsync(point);
+    }
+}

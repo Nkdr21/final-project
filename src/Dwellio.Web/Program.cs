@@ -5,7 +5,13 @@ using Dwellio.Web.Components;
 using Dwellio.Web.Components.Account;
 using Dwellio.Web.Data;
 using Dwellio.Web.Services;
-using Dwellio.Core.Services;
+using Dwellio.Web.Services.OpenData;
+using Microsoft.Extensions.Options;
+
+// The interface is in English: format numbers and dates the same way on every machine
+// (money is formatted explicitly in Kazakh/Russian style by Labels.Money).
+System.Globalization.CultureInfo.DefaultThreadCurrentCulture =
+    System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,9 +53,19 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 builder.Services.AddDbContextFactory<HousingDbContext>(options =>
     options.UseSqlite($"Data Source={Path.Combine(dataPath, "housing.db")}"));
 builder.Services.AddScoped<HousingService>();
-builder.Services.AddScoped<SearchState>();
-builder.Services.AddScoped<MarketShortlist>();
-builder.Services.AddSingleton<IRouteProvider, DemoRouteProvider>();
+builder.Services.AddScoped<PlannerState>();
+builder.Services.AddScoped<HomeFinder>();
+builder.Services.AddMemoryCache();
+
+// Free, key-less open data: OpenStreetMap (Overpass, Nominatim, Photon) and the Astana GTFS dataset.
+builder.Services.Configure<OpenDataOptions>(builder.Configuration.GetSection(OpenDataOptions.Section));
+void Polite(IServiceProvider services, HttpClient http) =>
+    http.DefaultRequestHeaders.UserAgent.ParseAdd(services.GetRequiredService<IOptions<OpenDataOptions>>().Value.UserAgent);
+builder.Services.AddHttpClient(OverpassClient.HttpClientName, (services, http) => { Polite(services, http); http.Timeout = TimeSpan.FromSeconds(120); });
+builder.Services.AddSingleton<OverpassClient>();
+builder.Services.AddHttpClient<GeocodingService>((services, http) => { Polite(services, http); http.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en,ru;q=0.8"); });
+builder.Services.AddSingleton<PlaceService>();
+builder.Services.AddSingleton<TransitService>();
 
 var app = builder.Build();
 await SeedData.Initialize(app.Services);

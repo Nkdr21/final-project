@@ -44,9 +44,29 @@ public class HousingServiceTests : IAsyncLifetime
     [Fact]
     public async Task Preferences_round_trip_and_are_private()
     {
-        auth.SignIn("alice", "Student"); var preferences = new Preferences(Budget: 175000, Categories: "park");
-        Assert.True((await service.SavePreferences(preferences)).Success); Assert.Equal(preferences, await service.LoadPreferences());
+        auth.SignIn("alice", "Student"); var preferences = new Preferences { Budget = 175000, Needs = ["park"], MustHaves = ["gym"] };
+        Assert.True((await service.SavePreferences(preferences)).Success);
+        Assert.Equal(preferences.CacheKey, (await service.LoadPreferences())!.CacheKey);
         auth.SignIn("bob", "Student"); Assert.Null(await service.LoadPreferences());
+    }
+    [Fact]
+    public async Task Corrupted_saved_preferences_fall_back_to_defaults()
+    {
+        auth.SignIn("alice", "Student");
+        await using (var db = new HousingDbContext(options))
+        {
+            db.Profiles.Add(new() { UserId = "alice", PreferencesJson = "{not json" });
+            await db.SaveChangesAsync();
+        }
+        Assert.Null(await service.LoadPreferences());
+    }
+    [Fact]
+    public async Task New_owner_listing_is_marked_as_owner_kind()
+    {
+        auth.SignIn("owner2", "Owner");
+        var item = new ListingEntity { ComplexId = 1, Title = "Fresh listing", Description = "A sufficiently detailed apartment description.", Rent = 120000 };
+        Assert.True((await service.SaveListing(item)).Success);
+        Assert.Equal(ListingKind.Owner, (await service.Listing(item.Id))!.Kind);
     }
     [Fact]
     public async Task Owner_cannot_edit_another_owners_listing()

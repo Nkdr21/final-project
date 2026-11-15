@@ -1,0 +1,160 @@
+@page "/homes/{Id:int}"
+@page "/apartment/{Id:int}"
+@inject HomeFinder Finder
+@inject HousingService Housing
+
+<PageTitle>@(result?.Listing.Title ?? "Home") — Dwellio</PageTitle>
+
+<div class="shell page">
+    <a href="/plan">← Back to my plan</a>
+    @if (loading)
+    {
+        <div class="skeleton" style="height:48px;width:50%;margin:16px 0"></div>
+        <div class="skeleton" style="height:360px"></div>
+    }
+    else if (result is null)
+    {
+        <EmptyState Emoji="🚪" Title="This home is not available">
+            <p class="muted">It may have been removed or hidden by a moderator.</p>
+            <a class="button" href="/plan">See homes that fit</a>
+        </EmptyState>
+    }
+    else
+    {
+        var listing = result.Listing;
+        var match = result.Match;
+        <div class="spread" style="margin:14px 0 18px">
+            <div>
+                <div class="inline" style="margin-bottom:6px"><KindTag Kind="listing.Kind" />@if (!listing.Available) { <span class="tag bad">No longer available</span> }</div>
+                <h1 style="margin:0">@listing.Title</h1>
+                <p class="muted" style="margin:4px 0 0"><a href="/complex/@result.Complex.Id">@result.Complex.Name</a> · @result.Complex.Address</p>
+            </div>
+            <div class="inline">
+                <button class="button ghost" @onclick="Favorite" aria-pressed="@(favorite ? "true" : "false")">@(favorite ? "♥ Saved" : "♡ Save")</button>
+                <button class="button ghost" @onclick="Compare" aria-pressed="@(State.CompareIds.Contains(Id) ? "true" : "false")">⚖️ @(State.CompareIds.Contains(Id) ? "In comparison" : "Compare")</button>
+            </div>
+        </div>
+        <p role="status" class="status @(error ? "error" : "")">@message</p>
+
+        <div class="detail">
+            <div>
+                <ListingPhoto Url="@listing.Photo" Alt="@($"Photo of {listing.Title}")" />
+                <div class="tags" style="margin-top:12px">
+                    <span class="tag">🛏 @listing.Rooms room@(listing.Rooms > 1 ? "s" : "")</span>
+                    <span class="tag">📐 @listing.Area m²</span>
+                    <span class="tag">🏢 floor @listing.Floor</span>
+                    <span class="tag">@(listing.Furnished ? "🛋 Furnished" : "Unfurnished")</span>
+                </div>
+                <p style="margin-top:14px">@listing.Description</p>
+                @if (listing.SourceUrl is not null)
+                {
+                    <a class="button soft" href="@listing.SourceUrl" target="_blank" rel="noopener noreferrer">Open the original listing on krisha.kz ↗</a>
+                }
+
+                <section class="section" aria-labelledby="life">
+                    <div class="spread"><h2 id="life" style="margin:0">Your everyday life here</h2><span class="tag">@match.Area.SatisfiedCount of @match.Area.Needs.Length needs ≤ @Plan.WalkLimit min</span></div>
+                    <p class="muted">Nearest real place for each of your needs, from OpenStreetMap.</p>
+                    <div class="grid-2">
+                        <NeedReport Report="match.Area" />
+                        <LiveMap Center="result.Complex.ToModel().Location" Zoom="15" Data="mapData" Label="Places around this home" />
+                    </div>
+                </section>
+
+                <section class="section" aria-labelledby="commute">
+                    <h2 id="commute">Getting to @Plan.DestinationName</h2>
+                    <p class="muted">Arriving by @Labels.Hour(Plan.ArriveByHour) · priority: @Labels.Priority(Plan.Priority) · <a href="/plan">change</a> · <a href="@CommuteLink">open in commute planner</a></p>
+                    <JourneyOptions Plan="match.Commute" Destination="@Plan.DestinationName" Priority="Plan.Priority" />
+                </section>
+            </div>
+
+            <aside class="stack">
+                <div class="panel stack">
+                    <div class="spread">
+                        <div><span class="eyebrow">Monthly rent</span><div class="price" style="font-size:28px">@Labels.Money(listing.Rent)</div></div>
+                        @if (match.Eligible) { <ScoreBadge Score="match.Score" /> }
+                    </div>
+                    <dl class="facts">
+                        <dt>Utilities</dt><dd>@(cost!.Utilities is { } u ? Labels.Money(u) : "not provided")</dd>
+                        <dt>Bus fares (your estimate)</dt><dd>@Labels.Money(cost.Transport)</dd>
+                        @if (cost.Gym > 0) { <dt>Gym membership</dt><dd>@Labels.Money(cost.Gym)</dd> }
+                        <dt><strong>@(cost.UtilitiesUnknown ? "Known monthly costs" : "Monthly total")</strong></dt><dd><strong>@Labels.Money(cost.KnownTotal)</strong></dd>
+                        <dt>Deposit (once)</dt><dd>@(cost.Deposit is { } d ? Labels.Money(d) : "not provided")</dd>
+                    </dl>
+                    @if (cost.UtilitiesUnknown) { <p class="note" style="margin:0">Utilities are unknown, so they are not counted — ask the owner.</p> }
+                </div>
+
+                <div class="panel stack">
+                    <h3 style="margin:0">Why this home @(match.Eligible ? "fits" : "doesn't fit")</h3>
+                    <ul class="why">
+                        @foreach (var x in match.Exclusions) { <li class="no">@x</li> }
+                        @foreach (var x in match.Reasons) { <li>@x</li> }
+                        @foreach (var x in match.Gaps) { <li class="gap">@x</li> }
+                    </ul>
+                    @if (match.Eligible)
+                    {
+                        <div class="stack" style="font-size:13px">
+                            <ScorePart Label="Price" Value="match.Parts.Price" Weight="Plan.PriceWeight" />
+                            <ScorePart Label="Neighbourhood" Value="match.Parts.Lifestyle" Weight="Plan.LifestyleWeight" />
+                            <ScorePart Label="Commute" Value="match.Parts.Commute" Weight="Plan.CommuteWeight" />
+                        </div>
+                    }
+                </div>
+
+                <div class="panel">
+                    <h3>Contact</h3>
+                    <p style="margin:0">@(string.IsNullOrWhiteSpace(listing.Contact) ? "No contact provided" : listing.Contact)</p>
+                    <small>Updated @listing.UpdatedUtc.ToString("dd.MM.yyyy")</small>
+                </div>
+            </aside>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [CascadingParameter] public PlannerState State { get; set; } = default!;
+    [CascadingParameter] public Preferences Plan { get; set; } = default!;
+
+    private HomeResult? result;
+    private MonthlyCost? cost;
+    private MapData mapData = MapData.Empty;
+    private bool loading = true, favorite, error;
+    private string message = "", loadedKey = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var key = $"{Id}|{Plan.CacheKey}";
+        if (key == loadedKey) return;
+        loadedKey = key;
+        loading = result is null;
+        result = await Finder.ForListingAsync(Id, Plan);
+        if (result is not null)
+        {
+            cost = HomeMatcher.Cost(result.Listing.ToModel(), Plan);
+            favorite = (await Housing.Favorites()).Contains(Id);
+            var home = result.Complex.ToModel();
+            var markers = new List<MapMarker> { new(home.Location.Lat, home.Location.Lon, "home", home.Name, result.Listing.Title, Emphasis: true) };
+            markers.AddRange(result.Match.Area.Needs.Where(n => n.Nearest is not null).Select(n =>
+                new MapMarker(n.Nearest!.Location.Lat, n.Nearest.Location.Lon, n.Category.Key, n.Nearest.DisplayName, $"{n.Category.Label} · {n.WalkMinutes} min walk")));
+            if (result.Match.Area.NearestStop is { } stop) markers.Add(new(stop.Location.Lat, stop.Location.Lon, "bus_stop", stop.DisplayName, "Nearest bus stop"));
+            mapData = new(markers);
+        }
+        loading = false;
+    }
+
+    private string CommuteLink => result is null ? "/commute" : FormattableString.Invariant(
+        $"/commute?fromLat={result.Complex.Latitude:F5}&fromLon={result.Complex.Longitude:F5}&from={Uri.EscapeDataString(result.Complex.Name)}");
+
+    private async Task Favorite()
+    {
+        var r = await Housing.ToggleFavorite(Id);
+        (message, error) = (r.Message, !r.Success);
+        if (r.Success) favorite = !favorite;
+    }
+
+    private async Task Compare()
+    {
+        var r = await State.ToggleCompareAsync(Id);
+        (message, error) = (r.Message, !r.Success);
+    }
+}

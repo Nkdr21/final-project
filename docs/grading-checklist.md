@@ -1,44 +1,43 @@
-# Grading evidence and remaining work
+# Grading evidence
 
-The supplied final rubric has 20 criteria at 5% each. This checklist records implementation, not an awarded score. An A/100 is not guaranteed.
+The rubric has 20 criteria at 5% each. This records what is implemented and where; it is not an awarded score.
 
-| Criterion | Evidence | Remaining verification / limitation |
+| Criterion | Evidence | Limitation |
 |---|---|---|
-| Code structure | Core/Web/Tests separation | Team must explain responsibilities |
-| Component reuse | ApartmentCard, TripCard, MapPanel, AmenityGroup | Review component parameters |
-| Cross-platform | .NET + browser; CI matrix configured | Windows, Linux and macOS jobs passed in [run 43634904148](https://github.com/Nkdr21/final-project/actions/runs/43634904148); device/browser QA remains separate |
-| State management | Scoped SearchState; persisted profiles/favourites | Comparison restored from tab sessionStorage after reload; not synced across devices |
-| UI design | Housing-oriented English UI, compact navigation and original illustrations | Home, catalog, comparison and detail captured in desktop/mobile Chrome; broader QA outstanding |
-| UX | Empty/error states; explanations; reversible actions | Complete hands-on user testing |
-| Responsiveness | CSS breakpoints for desktop/tablet/mobile | 390 px Chrome emulation checked; physical devices and other browsers unverified |
-| Core functionality | Catalog, preferences, detail, compare, auth, owner CRUD, reviews | Public Chrome flows verified; signed-in flows remain unverified |
-| Advanced features | Role authorization; personalized scoring; uploads | Live routing not integrated |
-| Error handling | Typed route outcomes, validation and unknown labels | More failure/load testing needed |
-| Efficiency | Batched catalog fetch, lazy images, no repeated route fetch per listing in catalog | No performance benchmark yet |
-| Scalability | Services/contracts and DB indexes | SQLite/small dataset; no load-tested scalability claim |
-| Resource utilization | Short-lived contexts, render batches | Catalog capped at 500; production pagination needed |
-| Automated testing | Core unit tests and real SQLite integration tests | 10 grouped Chrome checks passed; signed-in browser flows remain unverified |
-| Quality assurance | Build/tests/HTTP smoke checks | Cross-browser and mobile QA not completed |
-| Documentation | README, architecture, data model, sources and tests | Keep updated after friend changes |
-| Innovation | Lifestyle plus two-direction commute comparison | Demonstrate priority changes clearly |
-| Creative C# / FP | Records, pure functions, Func predicates, LINQ, typed outcomes | No unnecessary library abstractions |
-| Professionalism | No tracked secrets, accessible labels, clear demo provenance | Not production-ready; email/uploads need hardening |
-| Presentation | Demo outline and lecture mapping | Actual slides and rehearsals are later stages |
+| Code structure | Core (pure, no EF/HTTP) / Web (effects) / Tests; folders by domain: Geo, Places, Transit, Matching | — |
+| Component reuse | `LiveMap`, `PlaceSearch`, `NeedPicker`, generic `Segmented<TValue>`, templated generic `BarChart<TItem>`, `HomeCard`, `AreaCard`, `JourneyOptions`, `NeedReport`, `SeatMeter` — parameters + `EventCallback` | — |
+| Cross-platform | .NET 10 + browser; CI on Windows, Linux, macOS; Leaflet bundled locally | Physical devices not tested |
+| State management | `PlannerState` container with pure `Update(Func<Preferences,Preferences>)`, `Changed` event, cascading `Preferences` via `PlannerScope`, localStorage/sessionStorage/profile persistence | Comparison is per tab |
+| UI design | New design system (`app.css`): tokens, cards, chips, segmented controls, maps, charts | — |
+| UX | One-page planner with instant results, first-visit hint, explanations ("why it doesn't fit"), empty/error states, keyboard combobox | No user study |
+| Responsiveness | Mobile-first CSS, bottom tab bar on phones, collapsible plan panel, sticky panels on desktop | Emulated only |
+| Core functionality | Destination search → needs → homes/areas → seat-aware commute → compare/save; owner CRUD; reviews; moderation | — |
+| Advanced features | Live OpenStreetMap (Overpass) with mirror failover and SQLite cache; geocoding; GPS-based seat model; journey tactics; area search; roles | Seat chance is a model |
+| Error handling | Typed outcomes (`CommutePlan` cases), validation + sanitising, safe URL parsing, `ErrorBoundary`, offline fallbacks | — |
+| Efficiency | Spatial grid index, per-complex memoisation in `IMemoryCache`, background computation, cancellation of stale work, lazy images, no prerender double work | No formal benchmark |
+| Scalability | Immutable shared index (lock-free reads), cache keyed by plan, tile-based live refresh shared between users | SQLite, single server |
+| Resource utilization | One Overpass request per ~1 km tile per 72 h shared by all users; Nominatim rate gate; `IHttpClientFactory` | — |
+| Automated testing | 98 xUnit tests (unit, SQLite integration, fake HTTP, fake browser storage, real data) + HTTP smoke + browser audit | Signed-in browser flows |
+| Quality assurance | Desktop/mobile screenshots, browser audit without console errors | Cross-browser manual QA |
+| Documentation | README, architecture, data model, data sources, calculations, testing, defence guide | — |
+| Innovation | Seat chance from GPS dwell times; "walk back to an emptier stop" and "leave earlier" tactics; best-area search | — |
+| Creative C# / FP | Records + `with`, `ImmutableArray`, folds (`Aggregate`) for bus load and area selection, function composition (`Combine`), pattern matching on plan cases, `FrozenDictionary`, `ILookup` index, generic/templated components | — |
+| Professionalism | Data provenance on every card/map, licences attributed, no keys or secrets, polite API use | Not production-deployed |
+| Presentation | `defense.md` demo script | Slides and rehearsal are yours |
 
 ## Functional C# lecture mapping
 
-Reference supplied by the students: `L6_1_merged (1).pdf`, 1,537 pages. The following page numbers are physical PDF pages, not slide numbers.
+Reference supplied by the students: `L6_1_merged (1).pdf`, 1,537 pages (physical PDF page numbers).
 
-| Topic | Lecture location | Dwellio evidence | Explanation |
-|---|---|---|---|
-| Pure functions | 3, 6 | RecommendationEngine, NeighborhoodService | Results depend on explicit arguments, without database calls |
-| FP with OOP | 9 | Core functions plus HousingService | Functional calculations inside an ordinary C# application |
-| Records / immutable updates | 38–47 | Preferences and UI `with` updates | New preference value rather than hidden mutation |
-| Higher-order functions | 48–95 | FitsBudget returns Func; LINQ Where accepts it | Pass a rule as data |
-| LINQ / declarative transformations | 53, 95 | Filter, Select, OrderBy, All, Any | Describe the selected result |
-| Discriminated alternatives | 96 onward | RoutesFound / RoutesMissing / RoutesUnavailable | Different outcomes carry different information |
-| Pattern matching | 41–42 | RouteResult and Crowding switches | Handle a specific case explicitly |
-| Functional composition | 248 onward | Validate → filter → evaluate → sort | Small steps form a pipeline; no claim to implement a full monad library |
-| Testing external boundaries | 1458–1460, 1528–1529 | Route interface; in-memory SQLite tests | Core is deterministic; effects are tested separately |
-
-Not every advanced lecture concept is forced into the project. Currying libraries, recursion and memoization are not required for this small dataset. Explain why each used technique helps rather than reciting terminology.
+| Topic | Lecture pages | Dwellio evidence |
+|---|---|---|
+| Pure functions | 3, 6 | `HomeMatcher.Evaluate`, `SeatModel.Profile`, `JourneyPlanner.Plan`, `AreaAnalysis.Analyse` — results depend only on arguments |
+| FP with OOP | 9 | Pure Core used by ordinary ASP.NET services (`HomeFinder`, `PlaceService`) |
+| Records / immutable updates | 38–47 | `Preferences` updated with `with` in every input handler; `PlaceIndex.ReplaceArea` returns a new index |
+| Higher-order functions | 48–95 | `PlannerState.Update(Func<Preferences, Preferences>)`; `JourneyPlanner.Combine` returns a scoring function; `BarChart` takes `Func<TItem,double>` |
+| LINQ | 53, 95 | Query syntax in `PlaceIndex.Near`, `AreaSearch.Grid`, `RouteOptions` |
+| Folds | — | `SeatModel.Profile` (load along the route), `AreaSearch.Best` (greedy selection), tactic filtering in `JourneyPlanner.Options` |
+| Discriminated alternatives | 96 onward | `CommutePlan` = `TransitPlan` / `EstimatedBusPlan` / `WalkPlan` / `NoCommute` |
+| Pattern matching | 41–42 | `switch` on plan cases (`CommuteSummary`, `HomeMatcher.CommuteScore`), relational patterns in validation and labels |
+| Composition | 248 onward | Validate → analyse → plan → evaluate → rank pipeline |
+| Testing effects at the edge | 1458–1460, 1528–1529 | Core tested directly; HTTP and browser storage replaced by fakes in tests |

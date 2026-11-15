@@ -1,0 +1,25 @@
+<button type="button" class="panel area-card" aria-pressed="@(Selected ? "true" : "false")" @onclick="() => OnSelect.InvokeAsync(Area)">
+    <div class="spread" style="width:100%">
+        <div>
+            <span class="eyebrow">Area #@Rank</span>
+            <h3 style="margin:0">@Area.Label</h3>
+        </div>
+        <ScoreBadge Score="Area.Score" />
+    </div>
+    <CommuteSummary Plan="Area.Commute" />
+    <div class="tags">
+        @foreach (var need in Area.Report.Needs)
+        {
+            <span class="tag @(need.Satisfied(Area.Report.WalkLimit) ? "good" : "")">@need.Category.Icon @(need.WalkMinutes is { } m ? $"{m}′" : "—")</span>
+        }
+    </div>
+    <span class="note">@Area.Report.SatisfiedCount of @Area.Report.Needs.Length needs within @Area.Report.WalkLimit min · <a href="@AreaLink" @onclick:stopPropagation>details →</a></span>
+</button>
+
+@code {
+    [Parameter, EditorRequired] public AreaCandidate Area { get; set; } = default!;
+    [Parameter] public int Rank { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public EventCallback<AreaCandidate> OnSelect { get; set; }
+    private string AreaLink => FormattableString.Invariant($"/area?lat={Area.Location.Lat:F5}&lon={Area.Location.Lon:F5}&name={Uri.EscapeDataString(Area.Label)}");
+}

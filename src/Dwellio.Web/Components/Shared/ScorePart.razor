@@ -1,0 +1,11 @@
+@* One row of the score explanation: value 0..1 and the user's weight. *@
+<div>
+    <div class="spread"><span>@Label <span class="muted">× weight @Weight</span></span><strong>@Labels.Percent(Value)</strong></div>
+    <div class="meter @(Value >= .6 ? "" : Value >= .3 ? "warn" : "bad")" role="meter" aria-label="@Label score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@((int)Math.Round(Value * 100))"><span style="width:@((int)Math.Round(Value * 100))%"></span></div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public double Value { get; set; }
+    [Parameter] public int Weight { get; set; }
+}

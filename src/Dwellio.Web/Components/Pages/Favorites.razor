@@ -1,14 +1,49 @@
 @page "/favorites"
 @attribute [Authorize]
 @inject HousingService Housing
-@inject SearchState Search
+@inject HomeFinder Finder
+
 <PageTitle>Saved homes — Dwellio</PageTitle>
-<div class="shell section"><span class="eyebrow">YOUR SHORTLIST</span><h1>Saved homes</h1>@if(items.Count==0){<p class="empty">Nothing saved yet. Save a home from its detail page.</p><a href="/catalog" class="button">Explore apartments</a>}<div class="cards">@foreach(var item in items){<div><ApartmentCard Listing="item" Complex="complexes.First(x=>x.Id==item.ComplexId)" Selected="Search.CompareIds.Contains(item.Id)" OnCompare="Compare"/><button class="link-button" @onclick="()=>Remove(item.Id)">Remove from saved</button></div>}</div><p role="status">@message</p></div>
-@code{
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+
+<div class="shell page">
+    <span class="eyebrow">Your shortlist</span>
+    <h1>Saved homes</h1>
+    @if (items.IsEmpty)
     {
-        if (!firstRender) return;
-        await Search.LoadComparisonAsync();
-        StateHasChanged();
+        <EmptyState Emoji="♡" Title="Nothing saved yet">
+            <p class="muted">Open a home and tap ♡ Save to keep it here on every device.</p>
+            <a class="button" href="/plan">Find homes</a>
+        </EmptyState>
     }
-List<ListingEntity> items=[];List<ComplexEntity> complexes=[];string message="";protected override async Task OnInitializedAsync(){complexes=await Housing.Complexes();var ids=await Housing.Favorites();items=(await Housing.Listings()).Where(x=>ids.Contains(x.Id)).ToList();}async Task Compare(int id)=>message=(await Search.ToggleCompareAsync(id)).Message;async Task Remove(int id){message=(await Housing.ToggleFavorite(id)).Message;items.RemoveAll(x=>x.Id==id);}}
+    <div class="grid-3">
+        @foreach (var item in items)
+        {
+            <div class="stack" @key="item.Listing.Id">
+                <HomeCard Result="item" Selected="State.CompareIds.Contains(item.Listing.Id)" OnCompare="Compare" />
+                <button class="button small ghost" @onclick="() => Remove(item.Listing.Id)">Remove from saved</button>
+            </div>
+        }
+    </div>
+    <p role="status" class="status">@message</p>
+</div>
+
+@code {
+    [CascadingParameter] public PlannerState State { get; set; } = default!;
+    [CascadingParameter] public Preferences Plan { get; set; } = default!;
+    private ImmutableArray<HomeResult> items = [];
+    private string message = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var ids = await Housing.Favorites();
+        items = (await Finder.RankAsync(Plan)).Where(r => ids.Contains(r.Listing.Id)).ToImmutableArray();
+    }
+
+    private async Task Compare(int id) => message = (await State.ToggleCompareAsync(id)).Message;
+
+    private async Task Remove(int id)
+    {
+        message = (await Housing.ToggleFavorite(id)).Message;
+        items = items.RemoveAll(x => x.Listing.Id == id);
+    }
+}
