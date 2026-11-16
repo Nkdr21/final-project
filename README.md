@@ -1,6 +1,6 @@
 # Introduction to Functional programming
-# IT-2502
-# Group members:Anuarbek Nurkadyr, Daulet Ulgaisyn
+## Group:IT-2502
+### Group members:Anuarbek Nurkadyr, Daulet Ulgaisyn
 
 
 # Dwellio
@@ -13,6 +13,10 @@ Dwellio helps students and newcomers choose where to live in Astana around the p
 
 Built with C# / .NET 10, Blazor, Entity Framework Core, SQLite and Leaflet. All decisions are pure functions over immutable records in `Dwellio.Core`. Every data source is free and needs **no API key or sign-up**.
 
+<img width="910" height="652" alt="image" src="https://github.com/user-attachments/assets/e1111201-79bf-454d-99af-78d0e8ddc099" />
+<img width="905" height="650" alt="image" src="https://github.com/user-attachments/assets/7865c5ee-88e1-4a1e-ad95-d5fba73c459d" />
+<img width="912" height="655" alt="image" src="https://github.com/user-attachments/assets/e5a8c424-b51a-4691-9ccd-aa74f414a186" />
+<img width="909" height="649" alt="image" src="https://github.com/user-attachments/assets/1d9058ef-c41a-4f32-beed-fe77c6255b94" />
 
 ## Demo video
 
