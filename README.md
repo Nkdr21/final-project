@@ -13,6 +13,13 @@ Dwellio helps students and newcomers choose where to live in Astana around the p
 
 Built with C# / .NET 10, Blazor, Entity Framework Core, SQLite and Leaflet. All decisions are pure functions over immutable records in `Dwellio.Core`. Every data source is free and needs **no API key or sign-up**.
 
+
+## Demo video
+
+[Watch the 5-minute demo](demo/dwellio-demo.mp4) (MP4, 1440×900, captions only, no audio). It walks through the home page, the planner (homes and areas), home details, the commute and seat planner, compare, the phone layout, and the architecture and tests.
+
+The video is recorded from the running app by [scripts/record-demo.mjs](scripts/record-demo.mjs), so it can be re-created after UI changes (see the comment at the top of that script).
+
 ## Screenshots
 
 Captured 2026-11-15 in Chromium at 1440×1000 (desktop) and 390×844 (emulated phone).
